@@ -40,7 +40,12 @@ const showAddModal = ref(false)
         <header class="topic-header fade-in">
           <div class="topic-identity">
             <div class="topic-icon-large" :style="{ background: topic.accentColor, color: topic.color }">
-              {{ topic.icon }}
+              <template v-if="topic.icon.trim().startsWith('<svg')">
+                <span class="svg-icon-wrapper" v-html="topic.icon"></span>
+              </template>
+              <template v-else>
+                {{ topic.icon }}
+              </template>
             </div>
             <div>
               <h1 class="topic-title">{{ topic.name }}</h1>
@@ -181,6 +186,17 @@ const showAddModal = ref(false)
   justify-content: center;
   font-size: 2rem;
   flex-shrink: 0;
+}
+
+:deep(.svg-icon-wrapper) {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+:deep(.svg-icon-wrapper svg) {
+  width: 1em;
+  height: 1em;
 }
 
 .topic-title {

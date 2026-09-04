@@ -8,7 +8,12 @@ const props = defineProps<{ topic: Topic }>()
   <NuxtLink :to="`/topics/${topic.slug}`" class="topic-card">
     <div class="card-top">
       <div class="topic-icon" :style="{ background: topic.accentColor, color: topic.color }">
-        {{ topic.icon }}
+        <template v-if="topic.icon.trim().startsWith('<svg')">
+          <span class="svg-icon-wrapper" v-html="topic.icon"></span>
+        </template>
+        <template v-else>
+          {{ topic.icon }}
+        </template>
       </div>
       <div class="topic-meta">
         <span class="lesson-count">{{ topic.lessonCount }} lessons</span>
@@ -84,6 +89,17 @@ const props = defineProps<{ topic: Topic }>()
   font-size: 1.5rem;
   font-weight: 600;
   flex-shrink: 0;
+}
+
+:deep(.svg-icon-wrapper) {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+:deep(.svg-icon-wrapper svg) {
+  width: 1em;
+  height: 1em;
 }
 
 .topic-meta {

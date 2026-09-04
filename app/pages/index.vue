@@ -7,6 +7,7 @@ useHead({
 })
 
 const showAddModal = ref(false)
+const newTopicColor = ref('#818cf8')
 </script>
 
 <template>
@@ -104,8 +105,15 @@ const showAddModal = ref(false)
                 <textarea class="form-input form-textarea" placeholder="What will you learn in this topic?" id="topic-desc-input"></textarea>
               </div>
               <div class="form-group">
-                <label class="form-label">Icon (emoji)</label>
-                <input type="text" class="form-input" placeholder="🚀" id="topic-icon-input" />
+                <label class="form-label">Icon (Emoji or SVG)</label>
+                <input type="text" class="form-input" placeholder="🚀 or <svg>..." id="topic-icon-input" />
+              </div>
+              <div class="form-group">
+                <label class="form-label">Accent Color</label>
+                <div class="color-input-wrapper">
+                  <input type="color" class="color-picker" v-model="newTopicColor" id="topic-color-picker" />
+                  <input type="text" class="form-input color-text" v-model="newTopicColor" placeholder="#818cf8" id="topic-color-input" />
+                </div>
               </div>
             </div>
             <div class="modal-footer">
@@ -330,6 +338,54 @@ const showAddModal = ref(false)
 .form-textarea {
   resize: vertical;
   min-height: 80px;
+}
+
+.form-group-row {
+  display: flex;
+  gap: var(--space-4);
+}
+
+.form-group-row .form-group {
+  flex: 1;
+}
+
+.color-input-wrapper {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.color-picker {
+  -webkit-appearance: none;
+  -moz-appearance: none;
+  appearance: none;
+  width: 38px;
+  height: 38px;
+  padding: 0;
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-md);
+  background: none;
+  cursor: pointer;
+  flex-shrink: 0;
+}
+
+.color-picker::-webkit-color-swatch-wrapper {
+  padding: 0;
+}
+
+.color-picker::-webkit-color-swatch {
+  border: none;
+  border-radius: calc(var(--radius-md) - 1px);
+}
+
+.color-picker::-moz-color-swatch {
+  border: none;
+  border-radius: calc(var(--radius-md) - 1px);
+}
+
+.color-text {
+  font-family: var(--font-mono);
+  text-transform: uppercase;
 }
 
 .modal-footer {
