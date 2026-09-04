@@ -1,16 +1,41 @@
 <script setup lang="ts">
-import { getTopicBySlug, getLessonById, getAdjacentLessons } from '~/data/sample'
-
 const route = useRoute()
 const slug = computed(() => route.params.slug as string)
 const id = computed(() => route.params.id as string)
 
-const topic = computed(() => getTopicBySlug(slug.value))
-const lesson = computed(() => topic.value ? getLessonById(topic.value, id.value) : undefined)
-const adjacent = computed(() => topic.value && lesson.value ? getAdjacentLessons(topic.value, id.value) : null)
+const client = useSupabaseClient()
+const { data: topic, pending: topicPending } = await useAsyncData(`topic-${slug.value}`, async () => {
+  const { data } = await client.from('topics').select('*').eq('slug', slug.value).single()
+  return data
+})
+
+const { data: lesson, pending: lessonPending } = await useAsyncData(`lesson-${id.value}`, async () => {
+  const { data } = await client.from('lessons').select('*').eq('id', id.value).single()
+  return data
+})
+
+const { data: adjacent } = await useAsyncData(`adjacent-${id.value}`, async () => {
+  if (!topic.value) return null
+  const { data: allLessons } = await client.from('lessons')
+    .select('id, title, created_at')
+    .eq('topic_id', topic.value.id)
+    .order('created_at', { ascending: true })
+  
+  if (!allLessons) return null
+  
+  const currentIndex = allLessons.findIndex(l => l.id === id.value)
+  if (currentIndex === -1) return null
+  
+  return {
+    prev: currentIndex > 0 ? allLessons[currentIndex - 1] : null,
+    next: currentIndex < allLessons.length - 1 ? allLessons[currentIndex + 1] : null
+  }
+}, {
+  watch: [topic]
+})
 
 watchEffect(() => {
-  if (slug.value && id.value && (!topic.value || !lesson.value)) {
+  if (slug.value && id.value && !topicPending.value && !lessonPending.value && (!topic.value || !lesson.value)) {
     throw createError({ statusCode: 404, statusMessage: 'Lesson not found' })
   }
 })
@@ -73,17 +98,23 @@ function toggleToc() {
             <!-- Meta bar -->
             <div class="lesson-meta-bar">
               <div class="lesson-meta-left">
-                <span class="meta-tag" :style="{ color: topic.color, background: topic.accentColor }">
-                  {{ topic.name }}
-                </span>
+                <NuxtLink :to="`/topics/${topic.slug}`" class="meta-tag" :style="{ color: topic.color, background: topic.color + '1A' }">
+                  <template v-if="topic.icon && topic.icon.trim().startsWith('<svg')">
+                    <span class="svg-icon-wrapper" style="display: flex; align-items: center;" v-html="topic.icon"></span>
+                  </template>
+                  <template v-else>
+                    <span style="font-size: 1.2em;">{{ topic.icon }}</span>
+                  </template>
+                  <span class="topic-name" style="margin-left: 6px;">{{ topic.name }}</span>
+                </NuxtLink>
                 <span class="meta-time">
                   <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                     <circle cx="12" cy="12" r="10"/>
                     <polyline points="12 6 12 12 16 14"/>
                   </svg>
-                  {{ lesson.readTime }} min read
+                  {{ lesson.read_time }} min read
                 </span>
-                <span class="meta-date">Updated {{ lesson.updatedAt }}</span>
+                <span class="meta-date">Updated {{ lesson.updated_at ? new Date(lesson.updated_at).toLocaleDateString() : '' }}</span>
               </div>
 
               <div class="meta-actions">
@@ -266,7 +297,9 @@ function toggleToc() {
   gap: var(--space-3);
   flex-wrap: wrap;
 }
-
+.topic-name {
+  color: var(--text-primary);
+}
 .meta-actions {
   display: flex;
   align-items: center;

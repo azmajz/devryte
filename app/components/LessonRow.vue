@@ -24,13 +24,13 @@ const emit = defineEmits<{
             <circle cx="12" cy="12" r="10"/>
             <polyline points="12 6 12 12 16 14"/>
           </svg>
-          {{ lesson.readTime }} min read
+          {{ lesson.read_time }} min read
         </span>
       </div>
     </NuxtLink>
 
     <div class="lesson-actions">
-      <span class="updated-at">{{ lesson.updatedAt }}</span>
+      <span class="updated-at">{{ lesson.updated_at ? new Date(lesson.updated_at).toLocaleDateString() : '' }}</span>
       <NuxtLink :to="`/topics/${topic.slug}/lessons/${lesson.id}/edit`" class="btn-icon" title="Edit lesson">
         <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
           <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>

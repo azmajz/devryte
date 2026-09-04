@@ -11,7 +11,7 @@ const props = defineProps<{
 
 // Parse headings from markdown content (safe on SSR — pure string ops)
 const tocItems = computed<TocItem[]>(() => {
-  const headingRegex = /^(#{2,3})\s+(.+)$/gm
+  const headingRegex = /^(#{1,3})\s+(.+)$/gm
   const items: TocItem[] = []
   let match
 
@@ -158,6 +158,14 @@ function scrollTo(id: string) {
   border-left-color: var(--accent-primary);
   background: var(--accent-glow-soft);
   font-weight: 500;
+}
+
+.toc-level-1 {
+  font-weight: 600;
+}
+
+.toc-level-2 {
+  padding-left: calc(var(--space-3) + var(--space-2));
 }
 
 .toc-level-3 {

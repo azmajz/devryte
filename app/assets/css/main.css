@@ -519,3 +519,9 @@ pre code {
     padding-top: calc(60px + var(--space-6));
   }
 }
+
+
+.svg-icon-wrapper > svg {
+  height: 30px !important;
+  width: 30px !important;
+}

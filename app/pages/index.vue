@@ -1,13 +1,22 @@
 <script setup lang="ts">
-import { topics } from '~/data/sample'
+const client = useSupabaseClient()
+const { data: topics, pending } = await useAsyncData('topics', async () => {
+  const { data } = await client.from('topics').select('*, lessons(id)').order('name', { ascending: true })
+  return (data || []).map(t => ({
+    ...t,
+    lesson_count: t.lessons?.length || 0
+  }))
+})
+
+const { data: totalReadTime } = await useAsyncData('totalReadTime', async () => {
+  const { data } = await client.from('lessons').select('read_time')
+  return (data || []).reduce((sum, lesson) => sum + (lesson.read_time || 0), 0)
+})
 
 useHead({
   title: 'Devryte — Your Personal Learning Space',
   meta: [{ name: 'description', content: 'Organize your learning journey with topics, lessons, and notes.' }],
 })
-
-const showAddModal = ref(false)
-const newTopicColor = ref('#818cf8')
 </script>
 
 <template>
@@ -36,17 +45,17 @@ const newTopicColor = ref('#818cf8')
 
           <div class="hero-stats">
             <div class="stat">
-              <span class="stat-value">{{ topics.length }}</span>
+              <span class="stat-value">{{ topics?.length || 0 }}</span>
               <span class="stat-label">Topics</span>
             </div>
             <div class="stat-divider"></div>
             <div class="stat">
-              <span class="stat-value">{{ topics.reduce((a, t) => a + t.lessonCount, 0) }}</span>
+              <span class="stat-value">{{ (topics || []).reduce((a, t) => a + Number(t.lesson_count || 0), 0) }}</span>
               <span class="stat-label">Lessons</span>
             </div>
             <div class="stat-divider"></div>
             <div class="stat">
-              <span class="stat-value">{{ topics.reduce((a, t) => a + t.lessons.reduce((b, l) => b + l.readTime, 0), 0) }}</span>
+              <span class="stat-value">{{ totalReadTime || 0 }}</span>
               <span class="stat-label">Min of content</span>
             </div>
           </div>
@@ -59,16 +68,17 @@ const newTopicColor = ref('#818cf8')
               <h2 class="section-title">Your Topics</h2>
               <p class="section-sub">Select a topic to explore your lessons</p>
             </div>
-            <button class="btn btn-primary" @click="showAddModal = true" id="add-topic-btn">
+            <NuxtLink to="/topics" class="btn btn-primary" id="manage-topics-btn">
               <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-                <line x1="12" y1="5" x2="12" y2="19"/>
-                <line x1="5" y1="12" x2="19" y2="12"/>
+                <path d="M12 20h9"/>
+                <path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/>
               </svg>
-              Add Topic
-            </button>
+              Manage Topics
+            </NuxtLink>
           </div>
 
-          <div class="topics-grid">
+          <div v-if="pending" class="loading-state">Loading topics...</div>
+          <div v-else class="topics-grid">
             <TopicCard
               v-for="(topic, i) in topics"
               :key="topic.id"
@@ -80,50 +90,6 @@ const newTopicColor = ref('#818cf8')
         </section>
       </div>
     </main>
-
-    <!-- Add Topic Modal (visual only) -->
-    <Teleport to="body">
-      <Transition name="modal">
-        <div v-if="showAddModal" class="modal-overlay" @click.self="showAddModal = false">
-          <div class="modal-card">
-            <div class="modal-header">
-              <h3>Add New Topic</h3>
-              <button class="btn-icon" @click="showAddModal = false">
-                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                  <line x1="18" y1="6" x2="6" y2="18"/>
-                  <line x1="6" y1="6" x2="18" y2="18"/>
-                </svg>
-              </button>
-            </div>
-            <div class="modal-body">
-              <div class="form-group">
-                <label class="form-label">Topic Name</label>
-                <input type="text" class="form-input" placeholder="e.g. Rust, TypeScript, Docker…" id="topic-name-input" />
-              </div>
-              <div class="form-group">
-                <label class="form-label">Description</label>
-                <textarea class="form-input form-textarea" placeholder="What will you learn in this topic?" id="topic-desc-input"></textarea>
-              </div>
-              <div class="form-group">
-                <label class="form-label">Icon (Emoji or SVG)</label>
-                <input type="text" class="form-input" placeholder="🚀 or <svg>..." id="topic-icon-input" />
-              </div>
-              <div class="form-group">
-                <label class="form-label">Accent Color</label>
-                <div class="color-input-wrapper">
-                  <input type="color" class="color-picker" v-model="newTopicColor" id="topic-color-picker" />
-                  <input type="text" class="form-input color-text" v-model="newTopicColor" placeholder="#818cf8" id="topic-color-input" />
-                </div>
-              </div>
-            </div>
-            <div class="modal-footer">
-              <button class="btn btn-ghost" @click="showAddModal = false">Cancel</button>
-              <button class="btn btn-primary" @click="showAddModal = false" id="create-topic-btn">Create Topic</button>
-            </div>
-          </div>
-        </div>
-      </Transition>
-    </Teleport>
   </div>
 </template>
 

@@ -1,18 +1,23 @@
 <script setup lang="ts">
-import { getTopicBySlug, getLessonById } from '~/data/sample'
-
 const route = useRoute()
 const slug = computed(() => route.params.slug as string)
 const id = computed(() => route.params.id as string)
 const isNew = computed(() => id.value === 'new')
 
-const topic = computed(() => getTopicBySlug(slug.value))
-const existingLesson = computed(() =>
-  topic.value && !isNew.value ? getLessonById(topic.value, id.value) : undefined
-)
+const client = useSupabaseClient()
+const { data: topic, pending: topicPending } = await useAsyncData(`topic-${slug.value}`, async () => {
+  const { data } = await client.from('topics').select('*').eq('slug', slug.value).single()
+  return data
+})
+
+const { data: existingLesson, pending: lessonPending } = await useAsyncData(`edit-lesson-${id.value}`, async () => {
+  if (isNew.value) return null
+  const { data } = await client.from('lessons').select('*').eq('id', id.value).single()
+  return data
+})
 
 watchEffect(() => {
-  if (slug.value && !topic.value) {
+  if (slug.value && !topicPending.value && !topic.value) {
     throw createError({ statusCode: 404, statusMessage: 'Topic not found' })
   }
 })
@@ -23,7 +28,7 @@ const initialized = ref(false)
 
 // Initialize once the computed values are ready
 watchEffect(() => {
-  if (!initialized.value) {
+  if (!initialized.value && !topicPending.value && !lessonPending.value) {
     if (isNew.value) {
       lessonTitle.value = ''
       lessonContent.value = `# Lesson Title\n\nStart writing your lesson here...\n\n## Introduction\n\nDescribe the topic...\n\n## Code Example\n\n\`\`\`csharp\n// Your code here\nConsole.WriteLine("Hello, World!");\n\`\`\`\n\n## Summary\n\nWrap up the key points.\n`
@@ -35,6 +40,54 @@ watchEffect(() => {
     }
   }
 })
+
+const isSaving = ref(false)
+
+function generateSlug(title: string) {
+  return title.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)+/g, '')
+}
+
+async function saveLesson() {
+  if (!lessonTitle.value || !lessonContent.value || !topic.value) {
+    alert('Title and content are required')
+    return
+  }
+  
+  isSaving.value = true
+  try {
+    const calculatedSlug = generateSlug(lessonTitle.value)
+    const readTime = Math.max(1, Math.ceil(lessonContent.value.length / 800))
+    
+    if (isNew.value) {
+      const { data, error } = await client.from('lessons').insert({
+        title: lessonTitle.value,
+        content: lessonContent.value,
+        slug: calculatedSlug,
+        topic_id: topic.value.id,
+        read_time: readTime
+      }).select().single()
+      
+      if (error) throw error
+      navigateTo(`/topics/${topic.value.slug}/lessons/${data.id}`)
+    } else {
+      const { error } = await client.from('lessons').update({
+        title: lessonTitle.value,
+        content: lessonContent.value,
+        slug: calculatedSlug,
+        read_time: readTime,
+        updated_at: new Date().toISOString()
+      }).eq('id', id.value)
+      
+      if (error) throw error
+      navigateTo(`/topics/${topic.value.slug}/lessons/${id.value}`)
+    }
+  } catch(err) {
+    console.error(err)
+    alert('Failed to save lesson')
+  } finally {
+    isSaving.value = false
+  }
+}
 
 const activeTab = ref<'write' | 'preview'>('write')
 const isSplit = ref(true)
@@ -152,13 +205,13 @@ function handleEditorTab(e: KeyboardEvent) {
           <NuxtLink :to="isNew ? `/topics/${topic.slug}` : `/topics/${topic.slug}/lessons/${id}`" class="btn btn-ghost btn-sm" id="cancel-btn">
             Cancel
           </NuxtLink>
-          <button class="btn btn-primary btn-sm" id="save-btn">
+          <button class="btn btn-primary btn-sm" id="save-btn" @click="saveLesson" :disabled="isSaving">
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
               <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/>
               <polyline points="17 21 17 13 7 13 7 21"/>
               <polyline points="7 3 7 8 15 8"/>
             </svg>
-            Save
+            {{ isSaving ? 'Saving...' : 'Save' }}
           </button>
         </div>
       </div>

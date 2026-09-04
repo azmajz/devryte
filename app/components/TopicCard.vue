@@ -7,8 +7,8 @@ const props = defineProps<{ topic: Topic }>()
 <template>
   <NuxtLink :to="`/topics/${topic.slug}`" class="topic-card">
     <div class="card-top">
-      <div class="topic-icon" :style="{ background: topic.accentColor, color: topic.color }">
-        <template v-if="topic.icon.trim().startsWith('<svg')">
+      <div class="topic-icon" :style="{ background: topic.color + '1A', color: topic.color }">
+        <template v-if="topic.icon && topic.icon.trim().startsWith('<svg')">
           <span class="svg-icon-wrapper" v-html="topic.icon"></span>
         </template>
         <template v-else>
@@ -16,7 +16,7 @@ const props = defineProps<{ topic: Topic }>()
         </template>
       </div>
       <div class="topic-meta">
-        <span class="lesson-count">{{ topic.lessonCount }} lessons</span>
+        <span class="lesson-count">{{ topic.lesson_count || 0 }} lessons</span>
       </div>
     </div>
 

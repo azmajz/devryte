@@ -1,12 +1,34 @@
 <script setup lang="ts">
-import { getTopicBySlug } from '~/data/sample'
-
 const route = useRoute()
 const slug = computed(() => route.params.slug as string)
-const topic = computed(() => getTopicBySlug(slug.value))
+
+const client = useSupabaseClient()
+const { data: topic, pending: topicPending } = await useAsyncData(`topic-${slug.value}`, async () => {
+  const { data } = await client.from('topics').select('*').eq('slug', slug.value).single()
+  return data
+})
+
+const { data: lessons, pending: lessonsPending, refresh: refreshLessons } = await useAsyncData(`lessons-${slug.value}`, async () => {
+  if (!topic.value) return []
+  const { data } = await client.from('lessons').select('*').eq('topic_id', topic.value.id).order('created_at', { ascending: true })
+  return data || []
+}, {
+  watch: [topic]
+})
+
+async function handleDeleteLesson(lesson: any) {
+  if (!confirm(`Are you sure you want to delete lesson "${lesson.title}"?`)) return
+  try {
+    await client.from('lessons').delete().eq('id', lesson.id)
+    await refreshLessons()
+  } catch(err) {
+    console.error(err)
+    alert('Failed to delete lesson')
+  }
+}
 
 watchEffect(() => {
-  if (slug.value && !topic.value) {
+  if (slug.value && !topicPending.value && !topic.value) {
     throw createError({ statusCode: 404, statusMessage: 'Topic not found' })
   }
 })
@@ -39,8 +61,8 @@ const showAddModal = ref(false)
         <!-- Topic Header -->
         <header class="topic-header fade-in">
           <div class="topic-identity">
-            <div class="topic-icon-large" :style="{ background: topic.accentColor, color: topic.color }">
-              <template v-if="topic.icon.trim().startsWith('<svg')">
+            <div class="topic-icon-large" :style="{ background: topic.color + '1A', color: topic.color }">
+              <template v-if="topic.icon && topic.icon.trim().startsWith('<svg')">
                 <span class="svg-icon-wrapper" v-html="topic.icon"></span>
               </template>
               <template v-else>
@@ -54,7 +76,7 @@ const showAddModal = ref(false)
           </div>
 
           <div class="topic-header-actions">
-            <span class="lesson-badge">{{ topic.lessons.length }} lessons</span>
+            <span class="lesson-badge">{{ lessons?.length || 0 }} lessons</span>
           </div>
         </header>
 
@@ -71,15 +93,17 @@ const showAddModal = ref(false)
             </button>
           </div>
 
-          <div class="lessons-list">
+          <div v-if="lessonsPending" class="loading-state">Loading lessons...</div>
+          <div v-else class="lessons-list">
             <LessonRow
-              v-for="(lesson, i) in topic.lessons"
+              v-for="(lesson, i) in lessons"
               :key="lesson.id"
               :lesson="lesson"
               :index="i"
               :topic="topic"
               :style="{ animationDelay: `${i * 50}ms` }"
               class="fade-in"
+              @delete="handleDeleteLesson"
             />
           </div>
         </section>
