@@ -138,6 +138,31 @@ function handleEditorTab(e: KeyboardEvent): void {
     })
   }
 }
+
+// ── Scroll sync ───────────────────────────────────────────────
+const editorEl  = ref<HTMLTextAreaElement | null>(null)
+const previewEl = ref<HTMLDivElement | null>(null)
+let isSyncing = false
+
+function onEditorScroll(): void {
+  if (isSyncing || !editorEl.value || !previewEl.value) return
+  isSyncing = true
+  const editor  = editorEl.value
+  const preview = previewEl.value
+  const ratio = editor.scrollTop / (editor.scrollHeight - editor.clientHeight || 1)
+  preview.scrollTop = ratio * (preview.scrollHeight - preview.clientHeight)
+  requestAnimationFrame(() => { isSyncing = false })
+}
+
+function onPreviewScroll(): void {
+  if (isSyncing || !editorEl.value || !previewEl.value) return
+  isSyncing = true
+  const editor  = editorEl.value
+  const preview = previewEl.value
+  const ratio = preview.scrollTop / (preview.scrollHeight - preview.clientHeight || 1)
+  editor.scrollTop = ratio * (editor.scrollHeight - editor.clientHeight)
+  requestAnimationFrame(() => { isSyncing = false })
+}
 </script>
 
 <template>
@@ -247,11 +272,13 @@ function handleEditorTab(e: KeyboardEvent): void {
             <span class="char-count">{{ lessonContent.length }} chars</span>
           </div>
           <textarea
+            ref="editorEl"
             v-model="lessonContent"
             class="editor-textarea"
             placeholder="Write your lesson in Markdown..."
             spellcheck="false"
             @keydown="handleEditorTab"
+            @scroll="onEditorScroll"
             id="lesson-content-textarea"
           ></textarea>
         </div>
@@ -270,7 +297,12 @@ function handleEditorTab(e: KeyboardEvent): void {
               Preview
             </span>
           </div>
-          <div class="preview-content prose" v-html="previewHtml"></div>
+          <div
+            ref="previewEl"
+            class="preview-content prose"
+            v-html="previewHtml"
+            @scroll="onPreviewScroll"
+          ></div>
         </div>
       </div>
     </div>
