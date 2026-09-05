@@ -1,19 +1,21 @@
 <script setup lang="ts">
+import type { Topic, Lesson } from '~/types'
+
 const route = useRoute()
 const slug = computed(() => route.params.slug as string)
 const id = computed(() => route.params.id as string)
 const isNew = computed(() => id.value === 'new')
 
 const client = useSupabaseClient()
-const { data: topic, pending: topicPending } = await useAsyncData(`topic-${slug.value}`, async () => {
+const { data: topic, pending: topicPending } = await useAsyncData<Topic | null>(`topic-${slug.value}`, async () => {
   const { data } = await client.from('topics').select('*').eq('slug', slug.value).single()
-  return data
+  return data as Topic | null
 })
 
-const { data: existingLesson, pending: lessonPending } = await useAsyncData(`edit-lesson-${id.value}`, async () => {
+const { data: existingLesson, pending: lessonPending } = await useAsyncData<Lesson | null>(`edit-lesson-${id.value}`, async () => {
   if (isNew.value) return null
   const { data } = await client.from('lessons').select('*').eq('id', id.value).single()
-  return data
+  return data as Lesson | null
 })
 
 watchEffect(() => {
@@ -35,7 +37,7 @@ watchEffect(() => {
       initialized.value = true
     } else if (existingLesson.value) {
       lessonTitle.value = existingLesson.value.title
-      lessonContent.value = existingLesson.value.content
+      lessonContent.value = existingLesson.value.content ?? ''
       initialized.value = true
     }
   }
@@ -43,21 +45,21 @@ watchEffect(() => {
 
 const isSaving = ref(false)
 
-function generateSlug(title: string) {
+function generateSlug(title: string): string {
   return title.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)+/g, '')
 }
 
-async function saveLesson() {
+async function saveLesson(): Promise<void> {
   if (!lessonTitle.value || !lessonContent.value || !topic.value) {
     alert('Title and content are required')
     return
   }
-  
+
   isSaving.value = true
   try {
     const calculatedSlug = generateSlug(lessonTitle.value)
     const readTime = Math.max(1, Math.ceil(lessonContent.value.length / 800))
-    
+
     if (isNew.value) {
       const { data, error } = await client.from('lessons').insert({
         title: lessonTitle.value,
@@ -66,7 +68,7 @@ async function saveLesson() {
         topic_id: topic.value.id,
         read_time: readTime
       }).select().single()
-      
+
       if (error) throw error
       navigateTo(`/topics/${topic.value.slug}/lessons/${data.id}`)
     } else {
@@ -77,7 +79,7 @@ async function saveLesson() {
         read_time: readTime,
         updated_at: new Date().toISOString()
       }).eq('id', id.value)
-      
+
       if (error) throw error
       navigateTo(`/topics/${topic.value.slug}/lessons/${id.value}`)
     }
@@ -98,7 +100,7 @@ useHead(computed(() => ({
 })))
 
 // Render preview using correct marked v18 API
-async function renderPreview() {
+async function renderPreview(): Promise<void> {
   const { marked } = await import('marked')
   const hljs = (await import('highlight.js')).default
 
@@ -124,7 +126,7 @@ watch(lessonContent, () => {
 }, { immediate: true })
 
 // Tab keyboard shortcut
-function handleEditorTab(e: KeyboardEvent) {
+function handleEditorTab(e: KeyboardEvent): void {
   if (e.key === 'Tab') {
     e.preventDefault()
     const target = e.target as HTMLTextAreaElement

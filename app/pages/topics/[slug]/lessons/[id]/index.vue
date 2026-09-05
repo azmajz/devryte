@@ -1,34 +1,36 @@
 <script setup lang="ts">
+import type { Topic, Lesson, AdjacentLessons, AdjacentLesson } from '~/types'
+
 const route = useRoute()
 const slug = computed(() => route.params.slug as string)
 const id = computed(() => route.params.id as string)
 
 const client = useSupabaseClient()
-const { data: topic, pending: topicPending } = await useAsyncData(`topic-${slug.value}`, async () => {
+const { data: topic, pending: topicPending } = await useAsyncData<Topic | null>(`topic-${slug.value}`, async () => {
   const { data } = await client.from('topics').select('*').eq('slug', slug.value).single()
-  return data
+  return data as Topic | null
 })
 
-const { data: lesson, pending: lessonPending } = await useAsyncData(`lesson-${id.value}`, async () => {
+const { data: lesson, pending: lessonPending } = await useAsyncData<Lesson | null>(`lesson-${id.value}`, async () => {
   const { data } = await client.from('lessons').select('*').eq('id', id.value).single()
-  return data
+  return data as Lesson | null
 })
 
-const { data: adjacent } = await useAsyncData(`adjacent-${id.value}`, async () => {
+const { data: adjacent } = await useAsyncData<AdjacentLessons | null>(`adjacent-${id.value}`, async () => {
   if (!topic.value) return null
   const { data: allLessons } = await client.from('lessons')
     .select('id, title, created_at')
     .eq('topic_id', topic.value.id)
     .order('created_at', { ascending: true })
-  
+
   if (!allLessons) return null
-  
-  const currentIndex = allLessons.findIndex(l => l.id === id.value)
+
+  const currentIndex = allLessons.findIndex((l: AdjacentLesson) => l.id === id.value)
   if (currentIndex === -1) return null
-  
+
   return {
-    prev: currentIndex > 0 ? allLessons[currentIndex - 1] : null,
-    next: currentIndex < allLessons.length - 1 ? allLessons[currentIndex + 1] : null
+    prev: currentIndex > 0 ? allLessons[currentIndex - 1] as AdjacentLesson : null,
+    next: currentIndex < allLessons.length - 1 ? allLessons[currentIndex + 1] as AdjacentLesson : null
   }
 }, {
   watch: [topic]

@@ -1,22 +1,24 @@
 <script setup lang="ts">
+import type { Topic, Lesson } from '~/types'
+
 const route = useRoute()
 const slug = computed(() => route.params.slug as string)
 
 const client = useSupabaseClient()
-const { data: topic, pending: topicPending } = await useAsyncData(`topic-${slug.value}`, async () => {
+const { data: topic, pending: topicPending } = await useAsyncData<Topic | null>(`topic-${slug.value}`, async () => {
   const { data } = await client.from('topics').select('*').eq('slug', slug.value).single()
-  return data
+  return data as Topic | null
 })
 
-const { data: lessons, pending: lessonsPending, refresh: refreshLessons } = await useAsyncData(`lessons-${slug.value}`, async () => {
+const { data: lessons, pending: lessonsPending, refresh: refreshLessons } = await useAsyncData<Lesson[]>(`lessons-${slug.value}`, async () => {
   if (!topic.value) return []
   const { data } = await client.from('lessons').select('*').eq('topic_id', topic.value.id).order('created_at', { ascending: true })
-  return data || []
+  return (data || []) as Lesson[]
 }, {
   watch: [topic]
 })
 
-async function handleDeleteLesson(lesson: any) {
+async function handleDeleteLesson(lesson: Lesson) {
   if (!confirm(`Are you sure you want to delete lesson "${lesson.title}"?`)) return
   try {
     await client.from('lessons').delete().eq('id', lesson.id)

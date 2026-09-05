@@ -31,7 +31,7 @@ const activeId = ref('')
 // All DOM/observer logic lives inside onMounted to avoid SSR crashes
 let cleanups: (() => void)[] = []
 
-function setupObservers() {
+function setupObservers(): void {
   // Tear down existing observers
   cleanups.forEach(fn => fn())
   cleanups = []
@@ -43,7 +43,7 @@ function setupObservers() {
 
       const observer = new IntersectionObserver(
         ([entry]) => {
-          if (entry.isIntersecting) {
+          if (entry?.isIntersecting) {
             activeId.value = id
           }
         },
@@ -65,7 +65,7 @@ onUnmounted(() => {
   cleanups.forEach(fn => fn())
 })
 
-function scrollTo(id: string) {
+function scrollTo(id: string): void {
   if (!import.meta.client) return
   const el = document.getElementById(id)
   if (el) {

@@ -1,10 +1,12 @@
 <script setup lang="ts">
+import type { Topic } from '~/types'
+
 const client = useSupabaseClient()
 
 // Fetch all topics
-const { data: topics, pending, refresh } = await useAsyncData('manage-topics', async () => {
+const { data: topics, pending, refresh } = await useAsyncData<Topic[]>('manage-topics', async () => {
   const { data } = await client.from('topics').select('*').order('name', { ascending: true })
-  return data || []
+  return (data || []) as Topic[]
 })
 
 useHead({
@@ -36,7 +38,7 @@ function openAddModal() {
   showModal.value = true
 }
 
-function openEditModal(topic: any) {
+function openEditModal(topic: Topic): void {
   isEditing.value = true
   editingId.value = topic.id
   form.name = topic.name
@@ -46,11 +48,11 @@ function openEditModal(topic: any) {
   showModal.value = true
 }
 
-function generateSlug(name: string) {
+function generateSlug(name: string): string {
   return name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)+/g, '')
 }
 
-async function saveTopic() {
+async function saveTopic(): Promise<void> {
   if (!form.name) return
   isSubmitting.value = true
   
@@ -82,7 +84,7 @@ async function saveTopic() {
   }
 }
 
-async function deleteTopic(id: string) {
+async function deleteTopic(id: string): Promise<void> {
   if (!confirm('Are you sure you want to delete this topic? All lessons inside will be permanently deleted.')) return
   
   try {

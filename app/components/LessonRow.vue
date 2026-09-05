@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import type { Lesson, Topic } from '~/data/sample'
+import type { Lesson, Topic } from '~/types'
 
 const props = defineProps<{
   lesson: Lesson

@@ -1,27 +1,83 @@
 <script setup lang="ts">
+import type { SearchResult, TopicSearchResult, LessonSearchResult } from '~/types'
+
 const colorMode = useColorMode()
 
 const isDark = computed(() => colorMode.value === 'dark')
 
-function toggleColorMode() {
+function toggleColorMode(): void {
   colorMode.preference = isDark.value ? 'light' : 'dark'
 }
 
 const searchQuery = ref('')
 const searchOpen = ref(false)
 const searchInput = ref<HTMLInputElement | null>(null)
+const isSearching = ref(false)
+const searchResults = ref<SearchResult[]>([])
 
-function openSearch() {
+const client = useSupabaseClient()
+let searchTimeout: ReturnType<typeof setTimeout>
+
+watch(searchQuery, (newQuery) => {
+  if (!newQuery.trim()) {
+    searchResults.value = []
+    isSearching.value = false
+    return
+  }
+
+  clearTimeout(searchTimeout)
+  isSearching.value = true
+
+  searchTimeout = setTimeout(async () => {
+    try {
+      const q = `%${newQuery}%`
+      const [topicsRes, lessonsRes] = await Promise.all([
+        client.from('topics').select('id, name, slug').ilike('name', q).limit(4),
+        client.from('lessons').select('id, title, topics(name, slug)').ilike('title', q).limit(6)
+      ])
+
+      const results: SearchResult[] = []
+
+      if (topicsRes.data) {
+        results.push(...topicsRes.data.map((t): TopicSearchResult => ({
+          type: 'topic',
+          id: t.id as string,
+          title: t.name as string,
+          slug: t.slug as string,
+        })))
+      }
+
+      if (lessonsRes.data) {
+        results.push(...lessonsRes.data.map((l): LessonSearchResult => ({
+          type: 'lesson',
+          id: l.id as string,
+          title: l.title as string,
+          topicSlug: (l.topics as { slug: string } | null)?.slug ?? null,
+          topicName: (l.topics as { name: string } | null)?.name ?? null,
+        })))
+      }
+
+      searchResults.value = results
+    } catch(err) {
+      console.error(err)
+    } finally {
+      isSearching.value = false
+    }
+  }, 300)
+})
+
+function openSearch(): void {
   searchOpen.value = true
   nextTick(() => searchInput.value?.focus())
 }
 
-function closeSearch() {
+function closeSearch(): void {
   searchOpen.value = false
   searchQuery.value = ''
+  searchResults.value = []
 }
 
-function handleKeydown(e: KeyboardEvent) {
+function handleKeydown(e: KeyboardEvent): void {
   if ((e.metaKey || e.ctrlKey) && e.key === 'k') {
     e.preventDefault()
     openSearch()
@@ -34,7 +90,7 @@ onUnmounted(() => window.removeEventListener('keydown', handleKeydown))
 
 const route = useRoute()
 
-const navLinks = [
+const navLinks: { label: string; href: string }[] = [
   { label: 'Topics', href: '/' },
 ]
 </script>
@@ -109,7 +165,30 @@ const navLinks = [
             <button class="search-close" @click="closeSearch">Esc</button>
           </div>
           <div class="search-results">
-            <p class="search-empty">Start typing to search across all topics and lessons</p>
+            <div v-if="isSearching" class="search-empty">Searching...</div>
+            <div v-else-if="searchQuery && searchResults.length === 0" class="search-empty">No results found for "{{ searchQuery }}"</div>
+            <div v-else-if="searchQuery && searchResults.length > 0" class="results-list">
+              <NuxtLink
+                v-for="res in searchResults"
+                :key="`${res.type}-${res.id}`"
+                :to="res.type === 'topic' ? `/topics/${res.slug}` : `/topics/${res.topicSlug}/lessons/${res.id}`"
+                class="result-item"
+                @click="closeSearch"
+              >
+                <span class="result-icon">
+                  <svg v-if="res.type === 'topic'" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19.5v-15A2.5 2.5 0 0 1 6.5 2H20v20H6.5a2.5 2.5 0 0 1 0-5H20"/></svg>
+                  <svg v-else width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
+                </span>
+                <div class="result-info">
+                  <span class="result-title">{{ res.title }}</span>
+                  <span class="result-type">{{ res.type === 'topic' ? 'Topic' : 'Lesson' }}</span>
+                </div>
+                <div v-if="res.topicName" class="result-right">
+                  <span class="result-badge">{{ res.topicName }}</span>
+                </div>
+              </NuxtLink>
+            </div>
+            <p v-else class="search-empty">Start typing to search across all topics and lessons</p>
           </div>
         </div>
       </div>
@@ -299,6 +378,61 @@ const navLinks = [
   font-size: 0.875rem;
   text-align: center;
   padding: var(--space-4) 0;
+}
+
+.results-list {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.result-item {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  padding: var(--space-3) var(--space-4);
+  text-decoration: none;
+  border-radius: var(--radius-md);
+  transition: background var(--duration-fast);
+}
+.result-item:hover {
+  background: var(--bg-surface-hover);
+}
+.result-icon {
+  color: var(--text-tertiary);
+  display: flex;
+}
+.result-info {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-width: 0;
+}
+.result-title {
+  color: var(--text-primary);
+  font-weight: 500;
+  font-size: 0.9375rem;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.result-type {
+  color: var(--text-tertiary);
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+.result-right {
+  display: flex;
+  align-items: center;
+  flex-shrink: 0;
+}
+.result-badge {
+  font-size: 0.7rem;
+  background: var(--bg-surface-2);
+  color: var(--text-secondary);
+  padding: 2px 8px;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--border-subtle);
 }
 
 /* Transitions */

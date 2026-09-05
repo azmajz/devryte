@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import type { Topic } from '~/data/sample'
+import type { Topic } from '~/types'
 
 const props = defineProps<{ topic: Topic }>()
 </script>

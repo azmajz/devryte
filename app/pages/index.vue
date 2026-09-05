@@ -1,16 +1,18 @@
 <script setup lang="ts">
+import type { Topic } from '~/types'
+
 const client = useSupabaseClient()
-const { data: topics, pending } = await useAsyncData('topics', async () => {
+const { data: topics, pending } = await useAsyncData<Topic[]>('topics', async () => {
   const { data } = await client.from('topics').select('*, lessons(id)').order('name', { ascending: true })
   return (data || []).map(t => ({
     ...t,
-    lesson_count: t.lessons?.length || 0
-  }))
+    lesson_count: (t.lessons as { id: string }[] | null)?.length ?? 0,
+  })) as Topic[]
 })
 
-const { data: totalReadTime } = await useAsyncData('totalReadTime', async () => {
+const { data: totalReadTime } = await useAsyncData<number>('totalReadTime', async () => {
   const { data } = await client.from('lessons').select('read_time')
-  return (data || []).reduce((sum, lesson) => sum + (lesson.read_time || 0), 0)
+  return (data || []).reduce((sum: number, lesson: { read_time: number | null }) => sum + (lesson.read_time || 0), 0)
 })
 
 useHead({
