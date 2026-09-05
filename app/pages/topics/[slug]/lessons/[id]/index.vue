@@ -218,10 +218,9 @@ function toggleToc() {
   margin-bottom: var(--space-6);
   padding-top: var(--space-4);
   flex-wrap: wrap;
-  margin-left: 95px;
-}
-.toc-hidden.breadcrumb {
-  margin-left: 208px;
+  max-width: 768px;
+  margin-left: auto;
+  margin-right: auto;
 }
 
 .bc-item {
@@ -270,13 +269,8 @@ function toggleToc() {
 
 /* Centre prose within the content column */
 .prose-wrap {
-  max-width: 760px;
+  max-width: 768px;
   margin: 0 auto;
-}
-
-/* When TOC is hidden, give the prose even more breathing room */
-.toc-hidden .prose-wrap {
-  max-width: 820px;
 }
 
 /* ── Meta bar ────────────────────────────────────────────── */
@@ -288,14 +282,9 @@ function toggleToc() {
   margin-bottom: var(--space-8);
   padding-bottom: var(--space-5);
   border-bottom: 1px solid var(--border-subtle);
-  max-width: 760px;
+  max-width: 768px;
   margin-left: auto;
   margin-right: auto;
-}
-
-/* Also widen meta bar when TOC is hidden */
-.toc-hidden .lesson-meta-bar {
-  max-width: 820px;
 }
 
 .lesson-meta-left {
