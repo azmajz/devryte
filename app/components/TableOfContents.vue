@@ -100,26 +100,25 @@ function scrollTo(id: string): void {
 <style scoped>
 .toc-sidebar {
   position: sticky;
-  top: 100px;
-  width: 250px;
+  top: 88px;
+  width: 240px;
   flex-shrink: 0;
-  max-height: calc(100vh - 140px);
+  max-height: calc(100vh - 120px);
   overflow-y: auto;
-  padding-right: var(--space-2);
 }
 
 .toc-inner {
   display: flex;
   flex-direction: column;
-  gap: var(--space-4);
+  gap: var(--space-3);
 }
 
 .toc-label {
   font-size: 0.75rem;
-  font-weight: 600;
+  font-weight: 700;
   text-transform: uppercase;
-  letter-spacing: 0.05em;
-  color: var(--text-primary);
+  letter-spacing: 0.08em;
+  color: var(--text-tertiary);
   margin: 0;
   padding: 0 var(--space-3);
 }
@@ -127,23 +126,26 @@ function scrollTo(id: string): void {
 .toc-nav {
   display: flex;
   flex-direction: column;
-  gap: 4px;
+  gap: 2px;
+  border-left: 2px solid var(--border-subtle);
 }
 
 .toc-item {
   display: block;
   width: 100%;
   text-align: left;
-  background: transparent;
+  background: none;
   border: none;
-  padding: 6px var(--space-3);
-  font-size: 0.875rem;
-  color: var(--text-secondary);
+  padding: var(--space-1) var(--space-3);
+  font-size: 0.8125rem;
+  color: var(--text-tertiary);
   cursor: pointer;
-  transition: all var(--duration-fast) var(--ease-out);
-  line-height: 1.4;
+  transition: all var(--duration-fast);
+  border-left: 2px solid transparent;
+  margin-left: -2px;
+  line-height: 1.5;
   font-family: var(--font-sans);
-  border-radius: var(--radius-md);
+  border-radius: 0;
 }
 
 .toc-item:hover {
@@ -153,13 +155,13 @@ function scrollTo(id: string): void {
 
 .toc-item.active {
   color: var(--accent-primary);
+  border-left-color: var(--accent-primary);
   background: var(--accent-glow-soft);
   font-weight: 500;
 }
 
 .toc-level-1 {
   font-weight: 600;
-  color: var(--text-primary);
 }
 
 .toc-level-2 {
@@ -168,11 +170,11 @@ function scrollTo(id: string): void {
 
 .toc-level-3 {
   padding-left: calc(var(--space-3) + var(--space-4));
-  font-size: 0.8125rem;
+  font-size: 0.78125rem;
 }
 
 /* Scrollbar for TOC */
 .toc-sidebar::-webkit-scrollbar {
-  width: 4px;
+  width: 3px;
 }
 </style>
