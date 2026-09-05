@@ -55,7 +55,7 @@ useHead(computed(() => ({
 })))
 
 // TOC visibility — persisted in localStorage
-const tocVisible = ref(true)
+const tocVisible = ref(false)
 
 onMounted(() => {
   const saved = localStorage.getItem('devryte:toc-visible')
@@ -75,7 +75,7 @@ function toggleToc() {
     <main class="page-content" v-if="topic && lesson">
       <div class="lesson-outer">
         <!-- Breadcrumb -->
-        <nav class="breadcrumb fade-in" aria-label="Breadcrumb">
+        <nav :class="['breadcrumb fade-in', !tocVisible && 'toc-hidden']" aria-label="Breadcrumb">
           <NuxtLink to="/" class="bc-item">Topics</NuxtLink>
           <span class="bc-sep">
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -210,6 +210,7 @@ function toggleToc() {
 }
 
 /* Breadcrumb */
+
 .breadcrumb {
   display: flex;
   align-items: center;
@@ -217,6 +218,10 @@ function toggleToc() {
   margin-bottom: var(--space-6);
   padding-top: var(--space-4);
   flex-wrap: wrap;
+  margin-left: 95px;
+}
+.toc-hidden.breadcrumb {
+  margin-left: 208px;
 }
 
 .bc-item {

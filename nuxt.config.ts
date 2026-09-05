@@ -10,6 +10,8 @@ export default defineNuxtConfig({
     classSuffix: '',
     preference: 'dark',
     fallback: 'dark',
+    dataValue: 'theme',
+    storageKey: 'nuxt-color-mode',
   },
   css: ['~/assets/css/main.css', 'highlight.js/styles/github-dark-dimmed.css'],
   app: {

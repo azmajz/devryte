@@ -3,10 +3,16 @@ import type { SearchResult, TopicSearchResult, LessonSearchResult } from '~/type
 
 const colorMode = useColorMode()
 
-const isDark = computed(() => colorMode.value === 'dark')
+type ColorMode = 'light' | 'dark' | 'black'
+const modes: ColorMode[] = ['light', 'dark', 'black']
 
-function toggleColorMode(): void {
-  colorMode.preference = isDark.value ? 'light' : 'dark'
+const isDark = computed(() => colorMode.value === 'dark')
+const isBlack = computed(() => colorMode.value === 'black')
+
+function cycleColorMode(): void {
+  const current = colorMode.preference as ColorMode
+  const idx = modes.indexOf(current)
+  colorMode.preference = modes[(idx + 1) % modes.length]
 }
 
 const searchQuery = ref('')
@@ -100,7 +106,7 @@ const navLinks: { label: string; href: string }[] = [
     <div class="header-inner container-wide">
       <!-- Logo -->
       <NuxtLink to="/" class="logo">
-        <span class="logo-icon"><svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 16 16"><path d="M0 0h16v16H0z" fill="none"/><path fill="#6366f1" d="m9.854 5.146l1.97 1.97l-.707.707l-1.97-1.97a.5.5 0 0 1 .707-.707M2 12V4a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2v2.011c.044-.002.086-.013.13-.013c.301 0 .591.059.87.148V4a3 3 0 0 0-3-3H4a3 3 0 0 0-3 3v8a3 3 0 0 0 3 3h2.009c.007-.116.018-.233.046-.349L6.218 14H4a2 2 0 0 1-2-2m4.854-1.854L4.708 8l2.146-2.146a.5.5 0 0 0-.707-.707l-2.5 2.5a.5.5 0 0 0 0 .707l2.5 2.5a.5.5 0 0 0 .707-.707zm8.598-2.6a1.87 1.87 0 0 0-2.645 0l-4.829 4.829a2.2 2.2 0 0 0-.578 1.021l-.374 1.498a.89.89 0 0 0 1.079 1.079l1.498-.375a2.2 2.2 0 0 0 1.021-.578l4.829-4.829c.73-.73.73-1.914 0-2.645z"/></svg></span>
+        <span class="logo-icon"><svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 16 16"><path d="M0 0h16v16H0z" fill="none"/><path fill="currentColor" d="m9.854 5.146l1.97 1.97l-.707.707l-1.97-1.97a.5.5 0 0 1 .707-.707M2 12V4a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2v2.011c.044-.002.086-.013.13-.013c.301 0 .591.059.87.148V4a3 3 0 0 0-3-3H4a3 3 0 0 0-3 3v8a3 3 0 0 0 3 3h2.009c.007-.116.018-.233.046-.349L6.218 14H4a2 2 0 0 1-2-2m4.854-1.854L4.708 8l2.146-2.146a.5.5 0 0 0-.707-.707l-2.5 2.5a.5.5 0 0 0 0 .707l2.5 2.5a.5.5 0 0 0 .707-.707zm8.598-2.6a1.87 1.87 0 0 0-2.645 0l-4.829 4.829a2.2 2.2 0 0 0-.578 1.021l-.374 1.498a.89.89 0 0 0 1.079 1.079l1.498-.375a2.2 2.2 0 0 0 1.021-.578l4.829-4.829c.73-.73.73-1.914 0-2.645z"/></svg></span>
         <span class="logo-text">Devryte</span>
       </NuxtLink>
 
@@ -129,15 +135,26 @@ const navLinks: { label: string; href: string }[] = [
           <kbd class="search-kbd">⌘K</kbd>
         </button>
 
-        <!-- Theme toggle -->
-        <button class="theme-toggle btn-icon" @click="toggleColorMode" :aria-label="isDark ? 'Switch to light mode' : 'Switch to dark mode'">
+        <!-- Theme toggle (3-way: light / dark / black) -->
+        <button
+          class="theme-toggle btn-icon"
+          @click="cycleColorMode"
+          :aria-label="`Switch color mode (current: ${colorMode.value})`"
+          :title="`Current: ${colorMode.value} — click to cycle`"
+        >
           <Transition name="icon-flip" mode="out-in">
-            <svg v-if="isDark" key="sun" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <!-- Sun — light mode -->
+            <svg v-if="!isDark && !isBlack" key="sun" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
               <circle cx="12" cy="12" r="4"/>
               <path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M6.34 17.66l-1.41 1.41M19.07 4.93l-1.41 1.41"/>
             </svg>
-            <svg v-else key="moon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <!-- Moon — dark mode -->
+            <svg v-else-if="isDark" key="moon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
               <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/>
+            </svg>
+            <!-- Filled circle — black mode -->
+            <svg v-else key="black" width="18" height="18" viewBox="0 0 24 24" fill="currentColor" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+              <circle cx="12" cy="12" r="9"/>
             </svg>
           </Transition>
         </button>
