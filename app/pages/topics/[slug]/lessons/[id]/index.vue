@@ -281,18 +281,18 @@ function toggleToc() {
   align-items: center;
   justify-content: space-between;
   gap: var(--space-4);
-  margin-bottom: var(--space-8);
-  padding-bottom: var(--space-5);
-  border-bottom: 1px solid var(--border-subtle);
-  /* max-width: 768px; */
-  /* margin-left: auto; */
-  /* margin-right: auto; */
+  margin-bottom: var(--space-10);
+  padding: var(--space-3) var(--space-4);
+  background: var(--bg-surface);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-sm);
 }
 
 .lesson-meta-left {
   display: flex;
   align-items: center;
-  gap: var(--space-3);
+  gap: var(--space-5);
   flex-wrap: wrap;
 }
 .topic-name {
@@ -308,20 +308,26 @@ function toggleToc() {
 .meta-tag {
   display: inline-flex;
   align-items: center;
-  padding: 3px 10px 3px 0px;
+  padding: 4px 12px 4px 6px;
   border-radius: var(--radius-full);
-  font-size: 0.78125rem;
-  font-weight: 700;
-  letter-spacing: 0.02em;
+  font-size: 0.8125rem;
+  font-weight: 600;
+  text-decoration: none;
+  transition: opacity var(--duration-fast);
+}
+
+.meta-tag:hover {
+  opacity: 0.85;
 }
 
 .meta-time,
 .meta-date {
   display: inline-flex;
   align-items: center;
-  gap: 4px;
+  gap: 6px;
   font-size: 0.8125rem;
   color: var(--text-tertiary);
+  font-weight: 500;
 }
 
 /* ── TOC toggle button ───────────────────────────────────── */
