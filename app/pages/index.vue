@@ -19,35 +19,10 @@ useHead({
   title: 'Devryte — Your Personal Learning Space',
   meta: [{ name: 'description', content: 'Organize your learning journey with topics, lessons, and notes.' }],
 })
-
-// ── Cursor glow ───────────────────────────────────────────────
-const cursorX = ref(-999)
-const cursorY = ref(-999)
-const glowVisible = ref(false)
-
-function onMouseMove(e: MouseEvent): void {
-  cursorX.value = e.clientX
-  cursorY.value = e.clientY
-  if (!glowVisible.value) glowVisible.value = true
-}
-
-onMounted(() => window.addEventListener('mousemove', onMouseMove, { passive: true }))
-onUnmounted(() => window.removeEventListener('mousemove', onMouseMove))
 </script>
 
 <template>
   <div class="home-page">
-    <!-- Cursor glow overlay -->
-    <div
-      v-if="glowVisible"
-      class="cursor-glow"
-      :style="{
-        left: cursorX + 'px',
-        top: cursorY + 'px',
-      }"
-      aria-hidden="true"
-    />
-
     <AppHeader />
 
     <main class="page-content">
@@ -124,33 +99,6 @@ onUnmounted(() => window.removeEventListener('mousemove', onMouseMove))
 .home-page {
   min-height: 100vh;
   background: var(--bg-base);
-  position: relative;
-  isolation: isolate;
-}
-
-/* ── Cursor glow ───────────────────────────────────────────── */
-.cursor-glow {
-  pointer-events: none;
-  position: fixed;
-  z-index: 0;
-  width: 600px;
-  height: 600px;
-  border-radius: 50%;
-  transform: translate(-50%, -50%);
-  background: radial-gradient(
-    circle at center,
-    var(--accent-glow) 0%,
-    transparent 70%
-  );
-  transition: opacity 400ms ease;
-  will-change: left, top;
-  /* GPU-composited movement via JS inline style — no CSS transition on position
-     to avoid lag; instead we use requestAnimationFrame in the browser */
-}
-
-@media (hover: none) {
-  /* Touch devices — hide the glow */
-  .cursor-glow { display: none; }
 }
 
 /* Hero */
