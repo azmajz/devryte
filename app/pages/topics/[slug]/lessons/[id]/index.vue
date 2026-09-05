@@ -210,7 +210,6 @@ function toggleToc() {
 }
 
 /* Breadcrumb */
-
 .breadcrumb {
   display: flex;
   align-items: center;
@@ -218,11 +217,11 @@ function toggleToc() {
   margin-bottom: var(--space-6);
   padding-top: var(--space-4);
   flex-wrap: wrap;
-  max-width: 768px;
-  margin-left: auto;
-  margin-right: auto;
+  margin-left: 95px;
 }
-
+.toc-hidden.breadcrumb {
+  margin-left: 235px;
+}
 .bc-item {
   font-size: 0.875rem;
   color: var(--text-tertiary);
@@ -306,7 +305,7 @@ function toggleToc() {
 .meta-tag {
   display: inline-flex;
   align-items: center;
-  padding: 3px 10px;
+  padding: 3px 10px 3px 0px;
   border-radius: var(--radius-full);
   font-size: 0.78125rem;
   font-weight: 700;
