@@ -73,9 +73,9 @@ function toggleToc() {
     <AppHeader />
 
     <main class="page-content" v-if="topic && lesson">
-      <div class="lesson-outer">
+      <div class="lesson-container" :class="{ 'toc-hidden': !tocVisible }">
         <!-- Breadcrumb -->
-        <nav :class="['breadcrumb fade-in', !tocVisible && 'toc-hidden']" aria-label="Breadcrumb">
+        <nav class="breadcrumb fade-in" aria-label="Breadcrumb">
           <NuxtLink to="/" class="bc-item">Topics</NuxtLink>
           <span class="bc-sep">
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -203,10 +203,13 @@ function toggleToc() {
 }
 
 /* Outer shell — centred, max-width */
-.lesson-outer {
+.lesson-container {
   max-width: 1280px;
   margin: 0 auto;
   padding: 0 var(--space-6);
+}
+.lesson-container.toc-hidden {
+  max-width: 900px;
 }
 
 /* Breadcrumb */
@@ -217,11 +220,11 @@ function toggleToc() {
   margin-bottom: var(--space-6);
   padding-top: var(--space-4);
   flex-wrap: wrap;
-  margin-left: 95px;
+  /* margin-left: 95px; */
 }
-.toc-hidden.breadcrumb {
+/* .toc-hidden.breadcrumb {
   margin-left: 235px;
-}
+} */
 .bc-item {
   font-size: 0.875rem;
   color: var(--text-tertiary);
@@ -281,9 +284,9 @@ function toggleToc() {
   margin-bottom: var(--space-8);
   padding-bottom: var(--space-5);
   border-bottom: 1px solid var(--border-subtle);
-  max-width: 768px;
-  margin-left: auto;
-  margin-right: auto;
+  /* max-width: 768px; */
+  /* margin-left: auto; */
+  /* margin-right: auto; */
 }
 
 .lesson-meta-left {
@@ -438,7 +441,7 @@ function toggleToc() {
 }
 
 @media (max-width: 768px) {
-  .lesson-outer {
+  .lesson-container {
     padding: 0 var(--space-4);
   }
 }
