@@ -343,9 +343,19 @@ useHead(computed(() => ({
 @media (max-width: 768px) {
   .topic-header {
     flex-direction: column;
+    padding: var(--space-6) 0;
   }
   .topic-identity {
     flex-direction: column;
+    gap: var(--space-4);
+  }
+  .topic-icon-large {
+    width: 48px;
+    height: 48px;
+    font-size: 1.5rem;
+  }
+  .topic-title {
+    font-size: 1.5rem;
   }
 }
 </style>

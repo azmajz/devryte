@@ -125,7 +125,10 @@ const emit = defineEmits<{
   margin-right: var(--space-2);
 }
 
-@media (max-width: 600px) {
+@media (max-width: 768px) {
+  .lesson-row {
+    padding: var(--space-3) var(--space-4);
+  }
   .updated-at {
     display: none;
   }

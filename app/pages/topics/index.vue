@@ -427,6 +427,24 @@ async function deleteTopic(id: string): Promise<void> {
   min-height: 80px;
 }
 
+/* ─── Mobile Adjustments ─── */
+@media (max-width: 768px) {
+  .page-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: var(--space-4);
+  }
+  .topic-row {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: var(--space-4);
+  }
+  .topic-actions {
+    width: 100%;
+    justify-content: flex-end;
+  }
+}
+
 .form-group-row {
   display: flex;
   gap: var(--space-4);
