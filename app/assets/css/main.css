@@ -518,7 +518,8 @@ pre code {
   font-family: var(--font-mono);
   font-size: 0.875em;
   background: var(--bg-surface-2);
-  color: var(--accent-secondary);
+  /* color: var(--accent-secondary); */
+  color: var(--accent-primary);
   padding: 0.2em 0.45em;
   border-radius: var(--radius-sm);
   border: 1px solid var(--border-subtle);

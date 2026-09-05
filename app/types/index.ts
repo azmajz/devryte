@@ -46,7 +46,7 @@ export interface AdjacentLessons {
 export interface TopicSearchResult {
   type: 'topic'
   id: string
-  title: string
+  name: string
   slug: string
 }
 
