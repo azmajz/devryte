@@ -96,6 +96,16 @@ onUnmounted(() => window.removeEventListener('keydown', handleKeydown))
 
 const route = useRoute()
 
+const user = useSupabaseUser()
+
+const userMenuOpen = ref(false)
+
+async function handleLogout() {
+  userMenuOpen.value = false
+  await client.auth.signOut()
+  navigateTo('/admin')
+}
+
 const navLinks: { label: string; href: string }[] = [
   { label: 'Topics', href: '/' },
 ]
@@ -110,18 +120,6 @@ const navLinks: { label: string; href: string }[] = [
         <span class="logo-text">Devryte</span>
       </NuxtLink>
 
-      <!-- Nav -->
-      <nav class="header-nav">
-        <NuxtLink
-          v-for="link in navLinks"
-          :key="link.href"
-          :to="link.href"
-          class="nav-link"
-          :class="{ active: route.path === link.href }"
-        >
-          {{ link.label }}
-        </NuxtLink>
-      </nav>
 
       <!-- Actions -->
       <div class="header-actions">
@@ -172,6 +170,32 @@ const navLinks: { label: string; href: string }[] = [
             </template>
           </ClientOnly>
         </button>
+
+        <!-- Auth -->
+        <div class="auth-section">
+          <div v-if="user" class="user-menu-wrapper">
+            <button class="user-avatar-btn" @click="userMenuOpen = !userMenuOpen" aria-label="User Menu" :class="{ active: userMenuOpen }">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+            </button>
+            
+            <div v-if="userMenuOpen" class="user-menu-overlay" @click="userMenuOpen = false"></div>
+            
+            <Transition name="fade-slide">
+              <div v-if="userMenuOpen" class="user-menu-dropdown">
+                <div class="user-menu-header">
+                  <span class="user-email">{{ user.email }}</span>
+                </div>
+                <button @click="handleLogout" class="user-menu-item danger">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+                  Log Out
+                </button>
+              </div>
+            </Transition>
+          </div>
+          <NuxtLink v-else to="/admin" class="btn btn-primary btn-sm">
+            Log In
+          </NuxtLink>
+        </div>
       </div>
     </div>
   </header>
@@ -334,6 +358,106 @@ const navLinks: { label: string; href: string }[] = [
   color: var(--text-tertiary);
 }
 
+.auth-section {
+  display: flex;
+  align-items: center;
+  margin-left: var(--space-2);
+  padding-left: var(--space-4);
+  border-left: 1px solid var(--border-subtle);
+}
+
+.user-menu-wrapper {
+  position: relative;
+}
+
+.user-avatar-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  border: 1px solid var(--border-subtle);
+  background: var(--bg-surface-2);
+  color: var(--text-secondary);
+  cursor: pointer;
+  transition: all var(--duration-fast);
+}
+
+.user-avatar-btn:hover, .user-avatar-btn.active {
+  background: var(--bg-surface-hover);
+  color: var(--text-primary);
+  border-color: var(--accent-primary);
+}
+
+.user-menu-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 90;
+}
+
+.user-menu-dropdown {
+  position: absolute;
+  top: calc(100% + var(--space-2));
+  right: 0;
+  width: 220px;
+  background: var(--bg-surface);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-lg);
+  z-index: 100;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+.user-menu-header {
+  padding: var(--space-3) var(--space-4);
+  border-bottom: 1px solid var(--border-subtle);
+}
+
+.user-email {
+  font-size: 0.8125rem;
+  font-weight: 500;
+  color: var(--text-primary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  display: block;
+}
+
+.user-menu-item {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  padding: var(--space-3) var(--space-4);
+  background: transparent;
+  border: none;
+  width: 100%;
+  text-align: left;
+  font-family: var(--font-sans);
+  font-size: 0.875rem;
+  color: var(--text-secondary);
+  cursor: pointer;
+  transition: background var(--duration-fast), color var(--duration-fast);
+}
+
+.user-menu-item:hover {
+  background: var(--bg-surface-hover);
+  color: var(--text-primary);
+}
+
+.user-menu-item.danger:hover {
+  background: rgba(239, 68, 68, 0.08);
+  color: #ef4444;
+}
+
+@media (max-width: 600px) {
+  .auth-section {
+    padding-left: var(--space-2);
+  }
+}
+
 /* Theme toggle */
 .theme-toggle {
   color: var(--text-secondary);
@@ -494,6 +618,16 @@ const navLinks: { label: string; href: string }[] = [
 .icon-flip-leave-to {
   opacity: 0;
   transform: rotate(90deg) scale(0.7);
+}
+
+.fade-slide-enter-active,
+.fade-slide-leave-active {
+  transition: opacity var(--duration-fast) var(--ease-out), transform var(--duration-fast) var(--ease-out);
+}
+.fade-slide-enter-from,
+.fade-slide-leave-to {
+  opacity: 0;
+  transform: translateY(-8px);
 }
 
 @media (max-width: 600px) {

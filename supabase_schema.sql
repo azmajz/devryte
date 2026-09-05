@@ -9,6 +9,7 @@
 
 CREATE TABLE public.topics (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    user_id UUID not null references auth.users(id),
     slug TEXT UNIQUE NOT NULL,
     name TEXT NOT NULL,
     description TEXT,
@@ -19,6 +20,7 @@ CREATE TABLE public.topics (
 
 CREATE TABLE public.lessons (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    user_id UUID not null references auth.users(id),
     topic_id UUID NOT NULL REFERENCES public.topics(id) ON DELETE CASCADE,
     title TEXT NOT NULL,
     slug TEXT NOT NULL,

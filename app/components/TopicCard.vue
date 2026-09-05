@@ -2,6 +2,7 @@
 import type { Topic } from '~/types'
 
 const props = defineProps<{ topic: Topic }>()
+const lessonCount = computed(() => props.topic.lesson_count || 0)
 </script>
 
 <template>
@@ -16,7 +17,7 @@ const props = defineProps<{ topic: Topic }>()
         </template>
       </div>
       <div class="topic-meta">
-        <span class="lesson-count">{{ topic.lesson_count || 0 }} lessons</span>
+        <span class="lesson-count">{{ lessonCount }} lesson{{ lessonCount !== 1 ? "s" : "" }}</span>
       </div>
     </div>
 

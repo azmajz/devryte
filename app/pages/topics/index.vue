@@ -2,6 +2,7 @@
 import type { Topic } from '~/types'
 
 const client = useSupabaseClient()
+const user = useSupabaseUser()
 
 // Fetch all topics
 const { data: topics, pending, refresh } = await useAsyncData<Topic[]>('manage-topics', async () => {
@@ -9,14 +10,20 @@ const { data: topics, pending, refresh } = await useAsyncData<Topic[]>('manage-t
   return (data || []) as Topic[]
 })
 
-useHead({
-  title: 'Manage Topics — Devryte',
-})
+useHead(computed(() => ({
+  title: user.value ? 'Manage Topics — Devryte' : 'Topics — Devryte',
+})))
 
 // Modal state
 const showModal = ref(false)
 const isEditing = ref(false)
 const editingId = ref<string | null>(null)
+
+// Delete Modal state
+const showDeleteModal = ref(false)
+const topicToDelete = ref<Topic | null>(null)
+const deleteConfirmationText = ref('')
+const isDeleting = ref(false)
 
 // Form state
 const form = reactive({
@@ -84,15 +91,26 @@ async function saveTopic(): Promise<void> {
   }
 }
 
-async function deleteTopic(id: string): Promise<void> {
-  if (!confirm('Are you sure you want to delete this topic? All lessons inside will be permanently deleted.')) return
+function openDeleteModal(topic: Topic) {
+  topicToDelete.value = topic
+  deleteConfirmationText.value = ''
+  showDeleteModal.value = true
+}
+
+async function executeDeleteTopic(): Promise<void> {
+  if (!topicToDelete.value || deleteConfirmationText.value !== topicToDelete.value.name) return
+  isDeleting.value = true
   
   try {
-    await client.from('topics').delete().eq('id', id)
+    await client.from('topics').delete().eq('id', topicToDelete.value.id)
     await refresh()
+    showDeleteModal.value = false
   } catch (err) {
     console.error('Failed to delete topic', err)
     alert('Failed to delete topic')
+  } finally {
+    isDeleting.value = false
+    topicToDelete.value = null
   }
 }
 </script>
@@ -111,15 +129,15 @@ async function deleteTopic(id: string): Promise<void> {
               <polyline points="9 18 15 12 9 6"/>
             </svg>
           </span>
-          <span class="bc-item active">Manage Topics</span>
+          <span class="bc-item active">{{ user ? 'Manage Topics' : 'Topics' }}</span>
         </nav>
 
         <header class="page-header fade-in">
           <div>
-            <h1 class="page-title">Manage Topics</h1>
-            <p class="page-subtitle">Add, edit, or remove your learning categories.</p>
+            <h1 class="page-title">{{ user ? 'Manage Topics' : 'Topics' }}</h1>
+            <p class="page-subtitle">{{ user ? 'Add, edit, or remove your learning categories.' : 'Browse your learning categories.' }}</p>
           </div>
-          <button class="btn btn-primary" @click="openAddModal">
+          <button v-if="user" class="btn btn-primary" @click="openAddModal">
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
               <line x1="12" y1="5" x2="12" y2="19"/>
               <line x1="5" y1="12" x2="19" y2="12"/>
@@ -136,7 +154,7 @@ async function deleteTopic(id: string): Promise<void> {
           </div>
           
           <div v-for="topic in topics" :key="topic.id" class="topic-row">
-            <div class="topic-info">
+            <NuxtLink :to="`/topics/${topic.slug}`" class="topic-info">
               <div class="topic-icon-small" :style="{ background: topic.color + '1A', color: topic.color }">
                 <template v-if="topic.icon && topic.icon.trim().startsWith('<svg')">
                   <span class="svg-icon-wrapper" v-html="topic.icon"></span>
@@ -149,16 +167,16 @@ async function deleteTopic(id: string): Promise<void> {
                 <h3 class="topic-name">{{ topic.name }}</h3>
                 <p class="topic-slug">/{{ topic.slug }}</p>
               </div>
-            </div>
+            </NuxtLink>
             
-            <div class="topic-actions">
+            <div v-if="user" class="topic-actions">
               <button class="btn-icon" title="Edit Topic" @click="openEditModal(topic)">
                 <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                   <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
                   <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
                 </svg>
               </button>
-              <button class="btn-icon danger" title="Delete Topic" @click="deleteTopic(topic.id)">
+              <button class="btn-icon danger" title="Delete Topic" @click="openDeleteModal(topic)">
                 <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                   <polyline points="3 6 5 6 21 6"/>
                   <path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/>
@@ -213,6 +231,46 @@ async function deleteTopic(id: string): Promise<void> {
               <button class="btn btn-ghost" @click="showModal = false" :disabled="isSubmitting">Cancel</button>
               <button class="btn btn-primary" @click="saveTopic" :disabled="isSubmitting">
                 {{ isSubmitting ? 'Saving...' : (isEditing ? 'Save Changes' : 'Create Topic') }}
+              </button>
+            </div>
+          </div>
+        </div>
+      </Transition>
+    </Teleport>
+
+    <!-- Delete Modal -->
+    <Teleport to="body">
+      <Transition name="modal">
+        <div v-if="showDeleteModal && topicToDelete" class="modal-overlay" @click.self="showDeleteModal = false">
+          <div class="modal-card">
+            <div class="modal-header">
+              <h3 >Delete Topic</h3>
+              <button class="btn-icon" @click="showDeleteModal = false">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <line x1="18" y1="6" x2="6" y2="18"/>
+                  <line x1="6" y1="6" x2="18" y2="18"/>
+                </svg>
+              </button>
+            </div>
+            <div class="modal-body">
+              <p style="color: var(--text-secondary); margin-bottom: var(--space-2); line-height: 1.5;">
+                Are you sure you want to delete <strong>{{ topicToDelete.name }}</strong>? All lessons inside will be permanently deleted. This action cannot be undone.
+              </p>
+              <div class="form-group">
+                <label class="form-label">Please type <strong>{{ topicToDelete.name }}</strong> to confirm.</label>
+                <input type="text" class="form-input" v-model="deleteConfirmationText" :placeholder="topicToDelete.name" />
+              </div>
+            </div>
+            <div class="modal-footer">
+              <button class="btn btn-ghost" @click="showDeleteModal = false" :disabled="isDeleting">Cancel</button>
+              <button 
+                class="btn" 
+                style="background: #ef4444; color: white; border: none; opacity: 1;"
+                :style="deleteConfirmationText !== topicToDelete.name || isDeleting ? 'opacity: 0.5; cursor: not-allowed;' : ''"
+                :disabled="deleteConfirmationText !== topicToDelete.name || isDeleting"
+                @click="executeDeleteTopic"
+              >
+                {{ isDeleting ? 'Deleting...' : 'Delete Topic' }}
               </button>
             </div>
           </div>
@@ -297,6 +355,8 @@ async function deleteTopic(id: string): Promise<void> {
   display: flex;
   align-items: center;
   gap: var(--space-4);
+  text-decoration: none;
+  min-width: 0;
 }
 
 .topic-icon-small {

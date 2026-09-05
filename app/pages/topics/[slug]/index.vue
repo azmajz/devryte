@@ -3,6 +3,7 @@ import type { Topic, Lesson } from '~/types'
 
 const route = useRoute()
 const slug = computed(() => route.params.slug as string)
+const user = useSupabaseUser()
 
 const client = useSupabaseClient()
 const { data: topic, pending: topicPending } = await useAsyncData<Topic | null>(`topic-${slug.value}`, async () => {
@@ -77,7 +78,7 @@ useHead(computed(() => ({
           </div>
 
           <div class="topic-header-actions">
-            <span class="lesson-badge">{{ lessons?.length || 0 }} lessons</span>
+            <span class="lesson-badge">{{ lessons?.length || 0 }} lesson{{ (lessons?.length || 0) !== 1 ? 's' : '' }}</span>
           </div>
         </header>
 
@@ -85,7 +86,7 @@ useHead(computed(() => ({
         <section class="lessons-section">
           <div class="lessons-header">
             <h2 class="lessons-title">Lessons</h2>
-            <NuxtLink v-if="topic" :to="`/topics/${topic.slug}/lessons/new/edit`" class="btn btn-primary btn-sm" id="add-lesson-btn">
+            <NuxtLink v-if="topic && user" :to="`/topics/${topic.slug}/lessons/new/edit`" class="btn btn-primary btn-sm" id="add-lesson-btn">
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
                 <line x1="12" y1="5" x2="12" y2="19"/>
                 <line x1="5" y1="12" x2="19" y2="12"/>

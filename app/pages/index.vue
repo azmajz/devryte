@@ -2,12 +2,17 @@
 import type { Topic } from '~/types'
 
 const client = useSupabaseClient()
+const user = useSupabaseUser()
 const { data: topics, pending } = await useAsyncData<Topic[]>('topics', async () => {
   const { data } = await client.from('topics').select('*, lessons(id)').order('name', { ascending: true })
   return (data || []).map(t => ({
     ...t,
     lesson_count: (t.lessons as { id: string }[] | null)?.length ?? 0,
   })) as Topic[]
+})
+
+const totalLessons = computed(() => {
+  return (topics.value || []).reduce((sum, t) => sum + Number(t.lesson_count || 0), 0)
 })
 
 const { data: totalReadTime } = await useAsyncData<number>('totalReadTime', async () => {
@@ -52,8 +57,8 @@ useHead({
             </div>
             <div class="stat-divider"></div>
             <div class="stat">
-              <span class="stat-value">{{ (topics || []).reduce((a, t) => a + Number(t.lesson_count || 0), 0) }}</span>
-              <span class="stat-label">Lessons</span>
+              <span class="stat-value">{{ totalLessons }}</span>
+              <span class="stat-label">Lesson{{ totalLessons !== 1 ? 's' : '' }}</span>
             </div>
             <div class="stat-divider"></div>
             <div class="stat">
@@ -71,11 +76,11 @@ useHead({
               <p class="section-sub">Select a topic to explore your lessons</p>
             </div>
             <NuxtLink to="/topics" class="btn btn-primary" id="manage-topics-btn">
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+              <svg v-if="user" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
                 <path d="M12 20h9"/>
                 <path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/>
               </svg>
-              Manage Topics
+              {{ user ? 'Manage Topics' : 'View Topics' }}
             </NuxtLink>
           </div>
 
