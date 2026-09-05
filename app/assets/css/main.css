@@ -232,11 +232,13 @@ pre code {
 /* ─── LAYOUT ─────────────────────────────────────────────── */
 .container {
   width: 100%;
-  max-width: 1200px;
+  max-width: 900px;
   margin: 0 auto;
   padding: 0 var(--space-6);
 }
-
+.home-page .container {
+  max-width: 1200px;
+}
 .container-wide {
   width: 100%;
   max-width: 1400px;
