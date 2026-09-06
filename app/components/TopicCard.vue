@@ -99,8 +99,8 @@ const lessonCount = computed(() => props.topic.lesson_count || 0)
 }
 
 :deep(.svg-icon-wrapper svg) {
-  width: 1em;
-  height: 1em;
+  width: 34px !important;
+  height: 34px !important;
 }
 
 .topic-meta {

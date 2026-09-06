@@ -178,18 +178,15 @@ useHead(computed(() => ({
   font-size: 2rem;
   flex-shrink: 0;
 }
-
 :deep(.svg-icon-wrapper) {
   display: flex;
   align-items: center;
   justify-content: center;
 }
-
 :deep(.svg-icon-wrapper svg) {
-  width: 1em;
-  height: 1em;
+  width: 52px !important;
+  height: 52px !important;
 }
-
 .topic-title {
   font-size: 2rem;
   font-weight: 800;

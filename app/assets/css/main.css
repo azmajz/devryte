@@ -578,9 +578,3 @@ pre code {
     padding: 0.875rem;
   }
 }
-
-
-.svg-icon-wrapper > svg {
-  height: 30px !important;
-  width: 30px !important;
-}
