@@ -529,7 +529,7 @@ pre code {
 }
 
 /* black theme specific */
-.black table td code {
+.black .prose table td code {
   color: #fff;
   background: #242424;
 }
@@ -576,5 +576,15 @@ pre code {
   .prose pre {
     font-size: 0.75rem; /* 12px */
     padding: 0.875rem;
+  }
+
+  .prose table {
+    font-size: 0.8125rem; /* 13px */
+    margin: var(--space-4) 0;
+  }
+
+  .prose th,
+  .prose td {
+    padding: var(--space-2) var(--space-3);
   }
 }
