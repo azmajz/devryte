@@ -470,6 +470,8 @@ pre code {
   border-collapse: collapse;
   margin: var(--space-6) 0;
   font-size: 0.9375rem;
+  display: block;
+  overflow-x: auto;
 }
 
 .prose th {
@@ -524,6 +526,12 @@ pre code {
   padding: 0.2em 0.45em;
   border-radius: var(--radius-sm);
   border: 1px solid var(--border-subtle);
+}
+
+/* black theme specific */
+.black table td code {
+  color: #fff;
+  background: #242424;
 }
 
 /* ─── HLJS OVERRIDES ─────────────────────────────────────── */
