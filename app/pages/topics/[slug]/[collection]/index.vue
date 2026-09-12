@@ -182,69 +182,8 @@ async function executeDeleteLesson() {
 .bc-item.active { color: var(--text-secondary); font-weight: 500; }
 .bc-sep { color: var(--text-tertiary); display: flex; align-items: center; }
 
-/* Collection Header */
-/* .collection-header {
-  padding: var(--space-8) 0;
-  border-bottom: 1px solid var(--border-subtle);
-  margin-bottom: var(--space-8);
-}
+/* Collection Header was moved to TopicCollectionHeader.vue */
 
-.collection-meta {
-  margin-bottom: var(--space-4);
-}
-
-.topic-chip {
-  display: inline-flex;
-  align-items: center;
-  gap: var(--space-2);
-  padding: var(--space-1) var(--space-3);
-  border-radius: var(--radius-full);
-  font-size: 0.8125rem;
-  font-weight: 600;
-}
-
-:deep(.svg-icon-wrapper) {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-:deep(.svg-icon-wrapper svg) {
-  width: 14px !important;
-  height: 14px !important;
-}
-
-.collection-title-row {
-  display: flex;
-  align-items: center;
-  gap: var(--space-4);
-  flex-wrap: wrap;
-  margin-bottom: var(--space-3);
-}
-
-.collection-title {
-  font-size: 2rem;
-  font-weight: 800;
-  letter-spacing: -0.04em;
-}
-
-.lesson-badge {
-  display: inline-flex;
-  align-items: center;
-  padding: var(--space-2) var(--space-4);
-  background: var(--bg-surface-2);
-  border: 1px solid var(--border-subtle);
-  border-radius: var(--radius-full);
-  font-size: 0.8125rem;
-  font-weight: 600;
-  color: var(--text-secondary);
-}
-
-.collection-description {
-  font-size: 1rem;
-  color: var(--text-secondary);
-  max-width: 60ch;
-  line-height: 1.6;
-} */
 
 /* Lessons */
 .lessons-section { padding-bottom: var(--space-20); }
@@ -283,7 +222,11 @@ async function executeDeleteLesson() {
 }
 
 @media (max-width: 768px) {
-  .collection-header { padding: var(--space-6) 0; }
-  .collection-title { font-size: 1.5rem; }
+  .breadcrumb {
+    margin-bottom: var(--space-4);
+  }
+  .lessons-list {
+    padding: var(--space-1);
+  }
 }
 </style>

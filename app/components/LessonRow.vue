@@ -139,10 +139,27 @@ const editPath = computed(() =>
 
 @media (max-width: 768px) {
   .lesson-row {
-    padding: var(--space-3) var(--space-4);
+    padding: var(--space-3);
+    gap: var(--space-2);
+  }
+  .lesson-link {
+    gap: var(--space-3);
+  }
+  .lesson-number {
+    width: 22px;
+    font-size: 0.75rem;
+  }
+  .lesson-title {
+    font-size: 0.875rem;
+  }
+  .lesson-meta {
+    font-size: 0.75rem;
   }
   .updated-at {
     display: none;
+  }
+  .lesson-actions {
+    gap: 0;
   }
 }
 </style>
