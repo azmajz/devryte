@@ -46,7 +46,6 @@ const editingId = ref<string | null>(null)
 
 const showDeleteModal = ref(false)
 const collectionToDelete = ref<Collection | null>(null)
-const deleteConfirmText = ref('')
 const isDeleting = ref(false)
 
 const form = reactive({
@@ -112,7 +111,7 @@ function openDeleteModal(col: Collection) {
 }
 
 async function executeDeleteCollection(): Promise<void> {
-  if (!collectionToDelete.value || deleteConfirmText.value !== collectionToDelete.value.name) return
+  if (!collectionToDelete.value) return
   isDeleting.value = true
   try {
     await client.from('collections').delete().eq('id', collectionToDelete.value.id)
@@ -127,15 +126,13 @@ async function executeDeleteCollection(): Promise<void> {
   }
 }
 
-const totalLessons = computed(() =>
-  (collections.value ?? []).reduce((acc, c) => acc + (c.lesson_count ?? 0), 0)
-)
+// const totalLessons = computed(() =>
+//   (collections.value ?? []).reduce((acc, c) => acc + (c.lesson_count ?? 0), 0)
+// )
 </script>
 
 <template>
   <div class="topic-page">
-    <AppHeader />
-
     <main class="page-content" v-if="topic">
       <div class="container">
         <!-- Breadcrumb -->
@@ -221,43 +218,14 @@ const totalLessons = computed(() =>
     </Teleport>
 
     <!-- Delete Modal -->
-    <Teleport to="body">
-      <Transition name="modal">
-        <div v-if="showDeleteModal && collectionToDelete" class="modal-overlay" @click.self="showDeleteModal = false">
-          <div class="modal-card">
-            <div class="modal-header">
-              <h3>Delete Collection</h3>
-              <button class="btn-icon" @click="showDeleteModal = false">
-                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                  <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
-                </svg>
-              </button>
-            </div>
-            <div class="modal-body">
-              <p style="color: var(--text-secondary); margin-bottom: var(--space-2); line-height: 1.5;">
-                Are you sure you want to delete <strong>{{ collectionToDelete.name }}</strong>? All lessons inside will be permanently deleted. This cannot be undone.
-              </p>
-              <div class="form-group">
-                <label class="form-label">Type <strong>{{ collectionToDelete.name }}</strong> to confirm.</label>
-                <input type="text" class="form-input" v-model="deleteConfirmText" :placeholder="collectionToDelete.name" />
-              </div>
-            </div>
-            <div class="modal-footer">
-              <button class="btn btn-ghost" @click="showDeleteModal = false" :disabled="isDeleting">Cancel</button>
-              <button
-                class="btn"
-                style="background: #ef4444; color: white; border: none;"
-                :style="deleteConfirmText !== collectionToDelete.name || isDeleting ? 'opacity: 0.5; cursor: not-allowed;' : ''"
-                :disabled="deleteConfirmText !== collectionToDelete.name || isDeleting"
-                @click="executeDeleteCollection"
-              >
-                {{ isDeleting ? 'Deleting...' : 'Delete Collection' }}
-              </button>
-            </div>
-          </div>
-        </div>
-      </Transition>
-    </Teleport>
+    <DeleteModal
+      v-model:show="showDeleteModal"
+      :item-name="collectionToDelete?.name ?? ''"
+      item-type="Collection"
+      warning-text="All lessons inside will be permanently deleted."
+      :is-deleting="isDeleting"
+      @confirm="executeDeleteCollection"
+    />
   </div>
 </template>
 
@@ -385,12 +353,4 @@ const totalLessons = computed(() =>
 .modal-enter-active .modal-card, .modal-leave-active .modal-card { transition: transform var(--duration-fast) var(--ease-out); }
 .modal-enter-from, .modal-leave-to { opacity: 0; }
 .modal-enter-from .modal-card { transform: scale(0.95) translateY(8px); }
-
-@media (max-width: 768px) {
-  .topic-header { flex-direction: column; padding: var(--space-6) 0; }
-  .topic-identity { flex-direction: column; gap: var(--space-4); }
-  .topic-icon-large { width: 48px; height: 48px; font-size: 1.5rem; }
-  .topic-title { font-size: 1.5rem; }
-  .topic-header-stats { flex-wrap: wrap; }
-}
 </style>

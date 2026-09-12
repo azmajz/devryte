@@ -4,20 +4,11 @@ import type { Topic } from '~/types'
 const client = useSupabaseClient()
 const user = useSupabaseUser()
 const { data: topics, pending } = await useAsyncData<Topic[]>('topics', async () => {
-  const { data } = await client.from('topics').select('*, lessons(id)').order('name', { ascending: true })
+  const { data } = await client.from('topics').select('*, collections(id)').order('name', { ascending: true })
   return (data || []).map(t => ({
     ...t,
-    lesson_count: (t.lessons as { id: string }[] | null)?.length ?? 0,
+    collection_count: (t.collections as { id: string }[] | null)?.length ?? 0,
   })) as Topic[]
-})
-
-const totalLessons = computed(() => {
-  return (topics.value || []).reduce((sum, t) => sum + Number(t.lesson_count || 0), 0)
-})
-
-const { data: totalReadTime } = await useAsyncData<number>('totalReadTime', async () => {
-  const { data } = await client.from('lessons').select('read_time')
-  return (data || []).reduce((sum: number, lesson: { read_time: number | null }) => sum + (lesson.read_time || 0), 0)
 })
 
 useHead({
@@ -28,8 +19,6 @@ useHead({
 
 <template>
   <div class="home-page">
-    <AppHeader />
-
     <main class="page-content">
       <div class="container">
         <!-- Hero Section -->
@@ -48,23 +37,6 @@ useHead({
               Your topics, lessons, and notes — all in one place.
               No noise, just focused learning.
             </p>
-          </div>
-
-          <div class="hero-stats">
-            <div class="stat">
-              <span class="stat-value">{{ topics?.length || 0 }}</span>
-              <span class="stat-label">Topics</span>
-            </div>
-            <div class="stat-divider"></div>
-            <div class="stat">
-              <span class="stat-value">{{ totalLessons }}</span>
-              <span class="stat-label">Lesson{{ totalLessons !== 1 ? 's' : '' }}</span>
-            </div>
-            <div class="stat-divider"></div>
-            <div class="stat">
-              <span class="stat-value">{{ totalReadTime || 0 }}</span>
-              <span class="stat-label">Min of content</span>
-            </div>
           </div>
         </section>
 
@@ -113,7 +85,7 @@ useHead({
 
 .hero-text {
   max-width: 680px;
-  margin-bottom: var(--space-8);
+  margin-bottom: 0;
 }
 
 .hero-badge {
@@ -167,37 +139,6 @@ useHead({
   margin: 0;
 }
 
-.hero-stats {
-  display: flex;
-  align-items: center;
-  gap: var(--space-6);
-}
-
-.stat {
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
-}
-
-.stat-value {
-  font-size: 1.5rem;
-  font-weight: 800;
-  color: var(--text-primary);
-  letter-spacing: -0.03em;
-  font-variant-numeric: tabular-nums;
-}
-
-.stat-label {
-  font-size: 0.8125rem;
-  color: var(--text-tertiary);
-}
-
-.stat-divider {
-  width: 1px;
-  height: 32px;
-  background: var(--border-subtle);
-}
-
 /* Topics section */
 .topics-section {
   padding-bottom: var(--space-20);
@@ -231,161 +172,6 @@ useHead({
   gap: var(--space-5);
 }
 
-/* Modal */
-.modal-overlay {
-  position: fixed;
-  inset: 0;
-  background: rgba(0, 0, 0, 0.6);
-  backdrop-filter: blur(4px);
-  z-index: 200;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: var(--space-4);
-}
-
-.modal-card {
-  background: var(--bg-surface);
-  border: 1px solid var(--border-color);
-  border-radius: var(--radius-xl);
-  box-shadow: var(--shadow-lg);
-  width: 100%;
-  max-width: 460px;
-  overflow: hidden;
-}
-
-.modal-header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: var(--space-5) var(--space-6);
-  border-bottom: 1px solid var(--border-subtle);
-}
-
-.modal-header h3 {
-  font-size: 1.0625rem;
-  font-weight: 700;
-}
-
-.modal-body {
-  padding: var(--space-6);
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-5);
-}
-
-.form-group {
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-2);
-}
-
-.form-label {
-  font-size: 0.875rem;
-  font-weight: 600;
-  color: var(--text-primary);
-}
-
-.form-input {
-  width: 100%;
-  padding: var(--space-3) var(--space-4);
-  background: var(--bg-surface-2);
-  border: 1px solid var(--border-subtle);
-  border-radius: var(--radius-md);
-  color: var(--text-primary);
-  font-family: var(--font-sans);
-  font-size: 0.9375rem;
-  transition: border-color var(--duration-fast);
-  outline: none;
-}
-
-.form-input:focus {
-  border-color: var(--accent-primary);
-  box-shadow: var(--shadow-accent);
-}
-
-.form-input::placeholder {
-  color: var(--text-tertiary);
-}
-
-.form-textarea {
-  resize: vertical;
-  min-height: 80px;
-}
-
-.form-group-row {
-  display: flex;
-  gap: var(--space-4);
-}
-
-.form-group-row .form-group {
-  flex: 1;
-}
-
-.color-input-wrapper {
-  display: flex;
-  align-items: center;
-  gap: var(--space-2);
-}
-
-.color-picker {
-  -webkit-appearance: none;
-  -moz-appearance: none;
-  appearance: none;
-  width: 38px;
-  height: 38px;
-  padding: 0;
-  border: 1px solid var(--border-subtle);
-  border-radius: var(--radius-md);
-  background: none;
-  cursor: pointer;
-  flex-shrink: 0;
-}
-
-.color-picker::-webkit-color-swatch-wrapper {
-  padding: 0;
-}
-
-.color-picker::-webkit-color-swatch {
-  border: none;
-  border-radius: calc(var(--radius-md) - 1px);
-}
-
-.color-picker::-moz-color-swatch {
-  border: none;
-  border-radius: calc(var(--radius-md) - 1px);
-}
-
-.color-text {
-  font-family: var(--font-mono);
-  text-transform: uppercase;
-}
-
-.modal-footer {
-  display: flex;
-  justify-content: flex-end;
-  gap: var(--space-3);
-  padding: var(--space-4) var(--space-6);
-  border-top: 1px solid var(--border-subtle);
-}
-
-/* Modal transition */
-.modal-enter-active,
-.modal-leave-active {
-  transition: opacity var(--duration-fast) var(--ease-out);
-}
-.modal-enter-active .modal-card,
-.modal-leave-active .modal-card {
-  transition: transform var(--duration-fast) var(--ease-out);
-}
-.modal-enter-from,
-.modal-leave-to {
-  opacity: 0;
-}
-.modal-enter-from .modal-card {
-  transform: scale(0.95) translateY(8px);
-}
-
 @media (max-width: 768px) {
   .hero {
     padding: var(--space-8) 0 var(--space-6);
@@ -394,10 +180,6 @@ useHead({
   .section-header {
     flex-direction: column;
     align-items: flex-start;
-  }
-
-  .hero-stats {
-    gap: var(--space-4);
   }
 }
 </style>

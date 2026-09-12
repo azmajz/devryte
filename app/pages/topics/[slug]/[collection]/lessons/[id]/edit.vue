@@ -99,6 +99,7 @@ async function saveLesson(): Promise<void> {
         content: lessonContent.value,
         slug: calculatedSlug,
         collection_id: collection.value.id,
+        topic_id: topic.value!.id,
         order_index: nextOrder,
         read_time: readTime,
       }).select().single()
@@ -110,6 +111,7 @@ async function saveLesson(): Promise<void> {
         title: lessonTitle.value,
         content: lessonContent.value,
         slug: calculatedSlug,
+        topic_id: topic.value!.id,
         read_time: readTime,
         updated_at: new Date().toISOString(),
       }).eq('id', id.value)

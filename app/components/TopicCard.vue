@@ -2,7 +2,7 @@
 import type { Topic } from '~/types'
 
 const props = defineProps<{ topic: Topic }>()
-const lessonCount = computed(() => props.topic.lesson_count || 0)
+const collectionCount = computed(() => props.topic.collection_count || 0)
 </script>
 
 <template>
@@ -17,7 +17,7 @@ const lessonCount = computed(() => props.topic.lesson_count || 0)
         </template>
       </div>
       <div class="topic-meta">
-        <span class="lesson-count">{{ lessonCount }} lesson{{ lessonCount !== 1 ? "s" : "" }}</span>
+        <span class="collection-count">{{ collectionCount }} collection{{ collectionCount !== 1 ? "s" : "" }}</span>
       </div>
     </div>
 
@@ -109,7 +109,7 @@ const lessonCount = computed(() => props.topic.lesson_count || 0)
   gap: var(--space-2);
 }
 
-.lesson-count {
+.collection-count {
   font-size: 0.8125rem;
   color: var(--text-tertiary);
   background: var(--bg-surface-2);

@@ -16,9 +16,9 @@ export default defineNuxtConfig({
   css: ['~/assets/css/main.css', 'highlight.js/styles/github-dark-dimmed.css'],
   app: {
     head: {
-      title: 'Devryte — Personal Learning Space',
+      title: 'Devryte — Learning Workspace',
       meta: [
-        { name: 'description', content: 'Devryte is a personal learning space to organize your topics, lessons, and notes.' },
+        { name: 'description', content: 'Devryte is a learning workspace to organize topics, lessons.' },
         { name: 'viewport', content: 'width=device-width, initial-scale=1' },
       ],
       link: [

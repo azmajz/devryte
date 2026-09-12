@@ -60,22 +60,34 @@ useHead(computed(() => ({
   meta: [{ name: 'description', content: collection.value?.description ?? '' }],
 })))
 
-async function handleDeleteLesson(lesson: Lesson) {
-  if (!confirm(`Are you sure you want to delete lesson "${lesson.title}"?`)) return
+const showDeleteModal = ref(false)
+const lessonToDelete = ref<Lesson | null>(null)
+const isDeleting = ref(false)
+
+function openDeleteModal(lesson: Lesson) {
+  lessonToDelete.value = lesson
+  showDeleteModal.value = true
+}
+
+async function executeDeleteLesson() {
+  if (!lessonToDelete.value) return
+  isDeleting.value = true
   try {
-    await client.from('lessons').delete().eq('id', lesson.id)
+    await client.from('lessons').delete().eq('id', lessonToDelete.value.id)
     await refreshLessons()
+    showDeleteModal.value = false
   } catch (err) {
     console.error(err)
     alert('Failed to delete lesson')
+  } finally {
+    isDeleting.value = false
+    lessonToDelete.value = null
   }
 }
 </script>
 
 <template>
   <div class="collection-page">
-    <AppHeader />
-
     <main class="page-content" v-if="topic && collection">
       <div class="container">
         <!-- Breadcrumb -->
@@ -130,12 +142,22 @@ async function handleDeleteLesson(lesson: Lesson) {
               :collection="collection"
               :style="{ animationDelay: `${i * 50}ms` }"
               class="fade-in"
-              @delete="handleDeleteLesson"
+              @delete="openDeleteModal"
             />
           </div>
         </section>
       </div>
     </main>
+
+    <DeleteModal
+      v-model:show="showDeleteModal"
+      :item-name="lessonToDelete?.title ?? ''"
+      item-type="Lesson"
+      warning-text="This lesson will be permanently deleted."
+      :is-deleting="isDeleting"
+      :require-confirm="false"
+      @confirm="executeDeleteLesson"
+    />
   </div>
 </template>
 
