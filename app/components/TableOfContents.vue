@@ -7,6 +7,11 @@ interface TocItem {
 
 const props = defineProps<{
   content: string
+  mobile?: boolean
+}>()
+
+const emit = defineEmits<{
+  close: []
 }>()
 
 // Parse headings from markdown content (safe on SSR — pure string ops)
@@ -71,12 +76,15 @@ function scrollTo(id: string): void {
   if (el) {
     el.scrollIntoView({ behavior: 'smooth', block: 'start' })
     activeId.value = id
+    // On mobile close the drawer after navigating
+    if (props.mobile) emit('close')
   }
 }
 </script>
 
 <template>
-  <aside v-if="tocItems.length > 0" class="toc-sidebar">
+  <!-- ── Desktop: sticky sidebar ─────────────────────────────── -->
+  <aside v-if="!mobile && tocItems.length > 0" class="toc-sidebar">
     <div class="toc-inner">
       <p class="toc-label">On this page</p>
       <nav class="toc-nav">
@@ -95,9 +103,47 @@ function scrollTo(id: string): void {
       </nav>
     </div>
   </aside>
+
+  <!-- ── Mobile: bottom-sheet drawer ────────────────────────── -->
+  <template v-if="mobile && tocItems.length > 0">
+    <!-- Backdrop -->
+    <div class="toc-backdrop" @click="emit('close')" />
+
+    <!-- Sheet -->
+    <div class="toc-sheet" role="dialog" aria-modal="true" aria-label="Table of contents">
+      <!-- Handle + header -->
+      <div class="toc-sheet-header">
+        <div class="toc-sheet-handle" />
+        <p class="toc-label">On this page</p>
+        <button class="toc-sheet-close" @click="emit('close')" aria-label="Close table of contents">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+            <line x1="18" y1="6" x2="6" y2="18"/>
+            <line x1="6" y1="6" x2="18" y2="18"/>
+          </svg>
+        </button>
+      </div>
+
+      <!-- Nav list -->
+      <nav class="toc-nav toc-nav-sheet">
+        <button
+          v-for="item in tocItems"
+          :key="item.id"
+          class="toc-item"
+          :class="[
+            `toc-level-${item.level}`,
+            { active: activeId === item.id }
+          ]"
+          @click="scrollTo(item.id)"
+        >
+          {{ item.text }}
+        </button>
+      </nav>
+    </div>
+  </template>
 </template>
 
 <style scoped>
+/* ── Desktop sidebar ──────────────────────────────────────── */
 .toc-sidebar {
   position: sticky;
   top: 88px;
@@ -175,6 +221,115 @@ function scrollTo(id: string): void {
 
 /* Scrollbar for TOC */
 .toc-sidebar::-webkit-scrollbar {
+  width: 3px;
+}
+
+/* ── Mobile bottom-sheet ──────────────────────────────────── */
+.toc-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.55);
+  backdrop-filter: blur(2px);
+  z-index: 200;
+  animation: backdrop-in var(--duration-base, 200ms) ease;
+}
+
+@keyframes backdrop-in {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+
+.toc-sheet {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  z-index: 201;
+  background: var(--bg-surface);
+  border-top: 1px solid var(--border-subtle);
+  border-radius: 20px 20px 0 0;
+  padding: var(--space-4) var(--space-5) calc(var(--space-6) + env(safe-area-inset-bottom));
+  max-height: 72vh;
+  overflow-y: auto;
+  box-shadow: 0 -8px 32px rgba(0, 0, 0, 0.25);
+  animation: sheet-up var(--duration-base, 220ms) cubic-bezier(0.32, 0.72, 0, 1);
+}
+
+@keyframes sheet-up {
+  from { transform: translateY(100%); }
+  to   { transform: translateY(0); }
+}
+
+.toc-sheet-header {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  margin-bottom: var(--space-4);
+  position: relative;
+}
+
+.toc-sheet-handle {
+  position: absolute;
+  top: -20px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 36px;
+  height: 4px;
+  border-radius: 2px;
+  background: var(--border-color, #444);
+}
+
+.toc-sheet-close {
+  margin-left: auto;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  border-radius: var(--radius-full);
+  border: 1px solid var(--border-subtle);
+  background: var(--bg-surface-hover);
+  color: var(--text-tertiary);
+  cursor: pointer;
+  transition: all var(--duration-fast);
+  flex-shrink: 0;
+}
+
+.toc-sheet-close:hover {
+  color: var(--text-primary);
+  background: var(--bg-surface-2);
+}
+
+/* Sheet nav — no left border rule, items are full-width */
+.toc-nav-sheet {
+  border-left: none;
+  gap: 4px;
+}
+
+.toc-nav-sheet .toc-item {
+  border-left: none;
+  margin-left: 0;
+  border-radius: var(--radius-md);
+  padding: var(--space-2) var(--space-3);
+  font-size: 0.875rem;
+}
+
+.toc-nav-sheet .toc-level-2 {
+  padding-left: calc(var(--space-3) + var(--space-3));
+}
+
+.toc-nav-sheet .toc-level-3 {
+  padding-left: calc(var(--space-3) + var(--space-5));
+  font-size: 0.8125rem;
+}
+
+.toc-nav-sheet .toc-item.active {
+  border-left: none;
+  border-radius: var(--radius-md);
+}
+
+/* Sheet scrollbar */
+.toc-sheet::-webkit-scrollbar {
   width: 3px;
 }
 </style>

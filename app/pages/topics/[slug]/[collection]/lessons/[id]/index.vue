@@ -84,17 +84,54 @@ useHead(computed(() => ({
   }],
 })))
 
-// TOC visibility — persisted in localStorage
+// TOC visibility — persisted in localStorage (desktop only)
 const tocVisible = ref(false)
+const isMobile = ref(false)
+
+// Floating TOC button — visible when meta bar has scrolled out of view
+const metaBarRef = ref<HTMLElement | null>(null)
+const metaBarHidden = ref(false)
+
+function checkMobile() {
+  isMobile.value = window.innerWidth <= 1100
+}
+
+let metaBarObserver: IntersectionObserver | null = null
 
 onMounted(() => {
+  checkMobile()
+  window.addEventListener('resize', checkMobile)
+
   const saved = localStorage.getItem('devryte:toc-visible')
   if (saved !== null) tocVisible.value = saved === 'true'
+
+  // Watch the meta bar — no scroll listener needed
+  nextTick(() => {
+    if (metaBarRef.value) {
+      metaBarObserver = new IntersectionObserver(
+        ([entry]) => { metaBarHidden.value = !entry?.isIntersecting },
+        { threshold: 0, rootMargin: '-1px 0px 0px 0px' }
+      )
+      metaBarObserver.observe(metaBarRef.value)
+    }
+  })
+})
+
+onUnmounted(() => {
+  window.removeEventListener('resize', checkMobile)
+  metaBarObserver?.disconnect()
 })
 
 function toggleToc() {
   tocVisible.value = !tocVisible.value
-  localStorage.setItem('devryte:toc-visible', String(tocVisible.value))
+  // Only persist on desktop; mobile drawer is ephemeral
+  if (!isMobile.value) {
+    localStorage.setItem('devryte:toc-visible', String(tocVisible.value))
+  }
+}
+
+function closeMobileToc() {
+  tocVisible.value = false
 }
 
 const lessonBasePath = computed(() =>
@@ -142,7 +179,7 @@ const topicPath = computed(() => `/topics/${slug.value}`)
           <article class="lesson-content fade-in">
 
             <!-- Meta bar -->
-            <div class="lesson-meta-bar">
+            <div ref="metaBarRef" class="lesson-meta-bar">
               <div class="lesson-meta-left">
                 <NuxtLink :to="topicPath" class="meta-tag" :style="{ color: topic.color, background: topic.color + '1A' }">
                   <template v-if="topic.icon && topic.icon.trim().startsWith('<svg')">
@@ -232,13 +269,49 @@ const topicPath = computed(() => `/topics/${slug.value}`)
             </nav>
           </article>
 
-          <!-- ── Table of Contents ──────────────────────────── -->
+          <!-- ── Table of Contents (desktop sidebar) ─────────── -->
           <Transition name="toc-slide">
-            <TableOfContents v-if="tocVisible" :content="lesson.content" />
+            <TableOfContents
+              v-if="tocVisible && !isMobile"
+              :content="lesson.content"
+            />
           </Transition>
+
+          <!-- ── Table of Contents (mobile bottom-sheet) ───────── -->
+          <Teleport to="body">
+            <Transition name="toc-sheet-transition">
+              <TableOfContents
+                v-if="tocVisible && isMobile"
+                :content="lesson.content"
+                :mobile="true"
+                @close="closeMobileToc"
+              />
+            </Transition>
+          </Teleport>
         </div>
       </div>
     </main>
+
+    <!-- ── Floating TOC button (appears when meta bar is off-screen) ── -->
+    <Teleport to="body">
+      <Transition name="fab-pop">
+        <button
+          v-if="metaBarHidden"
+          class="toc-fab"
+          :class="{ active: tocVisible }"
+          :title="tocVisible ? 'Hide table of contents' : 'Show table of contents'"
+          @click="toggleToc"
+          id="floating-toc-btn"
+          aria-label="Toggle table of contents"
+        >
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <line x1="3" y1="6" x2="21" y2="6"/>
+            <line x1="3" y1="12" x2="15" y2="12"/>
+            <line x1="3" y1="18" x2="18" y2="18"/>
+          </svg>
+        </button>
+      </Transition>
+    </Teleport>
 
   </div>
 </template>
@@ -484,7 +557,11 @@ const topicPath = computed(() => `/topics/${slug.value}`)
 
 /* ── Responsive ──────────────────────────────────────────── */
 @media (max-width: 1100px) {
+  /* Collapse TOC sidebar column — drawer handles mobile */
   .lesson-layout {
+    grid-template-columns: 1fr;
+  }
+  .lesson-layout:not(.toc-hidden) {
     grid-template-columns: 1fr;
   }
 }
@@ -499,5 +576,71 @@ const topicPath = computed(() => `/topics/${slug.value}`)
   .lesson-nav { grid-template-columns: 1fr; }
   .lesson-meta-bar { flex-direction: column; align-items: flex-start; }
   .meta-actions { align-self: flex-start; }
+}
+
+/* ── Mobile TOC sheet transition ─────────────────────────── */
+.toc-sheet-transition-enter-active,
+.toc-sheet-transition-leave-active {
+  transition: none; /* Sheet handles its own animation */
+}
+.toc-sheet-transition-enter-active :deep(.toc-backdrop),
+.toc-sheet-transition-leave-active :deep(.toc-backdrop) {
+  transition: opacity var(--duration-base) ease;
+}
+.toc-sheet-transition-enter-from :deep(.toc-backdrop),
+.toc-sheet-transition-leave-to :deep(.toc-backdrop) {
+  opacity: 0;
+}
+</style>
+
+<!-- FAB and its transition are teleported outside the component root,
+     so they need a non-scoped block to receive styles. -->
+<style>
+/* ── Floating TOC button (FAB) ───────────────────────────── */
+.toc-fab {
+  position: fixed;
+  bottom: calc(var(--space-6, 1.5rem) + env(safe-area-inset-bottom, 0px));
+  right: var(--space-5, 1.25rem);
+  z-index: 150;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 42px;
+  height: 42px;
+  border-radius: 9999px;
+  border: 1px solid var(--border-subtle);
+  background: var(--bg-surface);
+  color: var(--text-tertiary);
+  cursor: pointer;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.2), 0 1px 4px rgba(0, 0, 0, 0.12);
+  transition: color 120ms ease, background 120ms ease, border-color 120ms ease,
+              transform 120ms ease, box-shadow 120ms ease;
+}
+
+.toc-fab:hover {
+  color: var(--text-primary);
+  background: var(--bg-surface-hover);
+  border-color: var(--border-color);
+  transform: scale(1.08);
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.28);
+}
+
+.toc-fab.active {
+  color: var(--accent-primary);
+  background: var(--accent-glow-soft);
+  border-color: var(--accent-primary);
+}
+
+/* FAB pop animation */
+.fab-pop-enter-active {
+  transition: opacity 200ms ease, transform 200ms cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+.fab-pop-leave-active {
+  transition: opacity 120ms ease, transform 120ms ease;
+}
+.fab-pop-enter-from,
+.fab-pop-leave-to {
+  opacity: 0;
+  transform: scale(0.75) translateY(8px);
 }
 </style>
