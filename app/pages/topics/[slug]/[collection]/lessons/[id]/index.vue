@@ -103,7 +103,12 @@ onMounted(() => {
   window.addEventListener('resize', checkMobile)
 
   const saved = localStorage.getItem('devryte:toc-visible')
-  if (saved !== null) tocVisible.value = saved === 'true'
+  
+  if (isMobile.value) {
+    tocVisible.value = false // Default hidden on mobile
+  } else if (saved !== null) {
+    tocVisible.value = saved === 'true' // Restore desktop preference
+  }
 
   // Watch the meta bar — no scroll listener needed
   nextTick(() => {
@@ -615,6 +620,15 @@ const topicPath = computed(() => `/topics/${slug.value}`)
   box-shadow: 0 4px 16px rgba(0, 0, 0, 0.2), 0 1px 4px rgba(0, 0, 0, 0.12);
   transition: color 120ms ease, background 120ms ease, border-color 120ms ease,
               transform 120ms ease, box-shadow 120ms ease;
+}
+
+@media (max-width: 768px) {
+  .toc-fab {
+    bottom: calc(var(--space-4, 1rem) + env(safe-area-inset-bottom, 0px));
+    right: var(--space-4, 1rem);
+    width: 48px;
+    height: 48px;
+  }
 }
 
 .toc-fab:hover {
