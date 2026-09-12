@@ -195,14 +195,16 @@ const topicPath = computed(() => `/topics/${slug.value}`)
                   </template>
                   <span class="topic-name" style="margin-left: 6px;">{{ topic.name }}</span>
                 </NuxtLink>
-                <span class="meta-time">
-                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                    <circle cx="12" cy="12" r="10"/>
-                    <polyline points="12 6 12 12 16 14"/>
-                  </svg>
-                  {{ lesson.read_time }} min read
-                </span>
-                <span class="meta-date">Updated {{ lesson.updated_at ? new Date(lesson.updated_at).toLocaleDateString() : '' }}</span>
+                <div class="meta-details">
+                  <span class="meta-time">
+                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                      <circle cx="12" cy="12" r="10"/>
+                      <polyline points="12 6 12 12 16 14"/>
+                    </svg>
+                    {{ lesson.read_time }} min read
+                  </span>
+                  <span class="meta-date">Updated {{ lesson.updated_at ? new Date(lesson.updated_at).toLocaleDateString() : '' }}</span>
+                </div>
               </div>
 
               <div class="meta-actions">
@@ -442,6 +444,13 @@ const topicPath = computed(() => `/topics/${slug.value}`)
 
 .meta-tag:hover { opacity: 0.85; }
 
+.meta-details {
+  display: flex;
+  align-items: center;
+  gap: var(--space-4);
+  flex-wrap: wrap;
+}
+
 .meta-time,
 .meta-date {
   display: inline-flex;
@@ -579,8 +588,32 @@ const topicPath = computed(() => `/topics/${slug.value}`)
 
 @media (max-width: 640px) {
   .lesson-nav { grid-template-columns: 1fr; }
-  .lesson-meta-bar { flex-direction: column; align-items: flex-start; }
-  .meta-actions { align-self: flex-start; }
+  
+  .lesson-meta-bar { 
+    flex-direction: column; 
+    align-items: stretch; 
+    padding: var(--space-4) var(--space-5);
+    border-radius: var(--radius-xl);
+    gap: var(--space-4);
+  }
+  
+  .lesson-meta-left {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: var(--space-3);
+  }
+
+  .meta-details {
+    width: 100%;
+    justify-content: space-between;
+  }
+  
+  .meta-actions { 
+    width: 100%;
+    justify-content: space-between;
+    padding-top: var(--space-3);
+    border-top: 1px solid var(--border-subtle);
+  }
 }
 
 /* ── Mobile TOC sheet transition ─────────────────────────── */

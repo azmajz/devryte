@@ -10,6 +10,10 @@ const showPassword = ref(false)
 const errorMessage = ref('')
 const successMessage = ref('')
 
+definePageMeta({
+  layout: false
+})
+
 // Redirect if already logged in
 watchEffect(() => {
   if (user.value) {
