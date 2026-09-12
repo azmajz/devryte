@@ -41,13 +41,46 @@ export interface Database {
           created_at?: string
         }
       }
-      lessons: {
+      collections: {
         Row: {
           id: string
           user_id: string
           topic_id: string
+          slug: string
+          name: string
+          description: string | null
+          order_index: number
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          user_id?: string
+          topic_id: string
+          slug: string
+          name: string
+          description?: string | null
+          order_index?: number
+          created_at?: string
+        }
+        Update: {
+          id?: string
+          user_id?: string
+          topic_id?: string
+          slug?: string
+          name?: string
+          description?: string | null
+          order_index?: number
+          created_at?: string
+        }
+      }
+      lessons: {
+        Row: {
+          id: string
+          user_id: string
+          collection_id: string
           title: string
           slug: string
+          order_index: number
           read_time: number
           content: string | null
           updated_at: string
@@ -56,9 +89,10 @@ export interface Database {
         Insert: {
           id?: string
           user_id?: string
-          topic_id: string
+          collection_id: string
           title: string
           slug: string
+          order_index?: number
           read_time?: number
           content?: string | null
           updated_at?: string
@@ -67,9 +101,10 @@ export interface Database {
         Update: {
           id?: string
           user_id?: string
-          topic_id?: string
+          collection_id?: string
           title?: string
           slug?: string
+          order_index?: number
           read_time?: number
           content?: string | null
           updated_at?: string

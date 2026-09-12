@@ -18,6 +18,17 @@ CREATE TABLE public.topics (
     created_at TIMESTAMPTZ DEFAULT NOW()
 );
 
+CREATE TABLE public.collections (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    user_id UUID NOT NULL REFERENCES auth.users(id),
+    topic_id UUID NOT NULL REFERENCES public.topics(id),
+    slug TEXT NOT NULL,
+    name TEXT NOT NULL,
+    description TEXT,
+    order_index INT NOT NULL DEFAULT 0,
+    created_at TIMESTAMPTZ DEFAULT NOW(),
+    UNIQUE(topic_id, slug)
+);
 CREATE TABLE public.lessons (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     user_id UUID not null references auth.users(id),

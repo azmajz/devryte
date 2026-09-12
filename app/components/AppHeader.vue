@@ -39,7 +39,10 @@ watch(searchQuery, (newQuery) => {
       const q = `%${newQuery}%`
       const [topicsRes, lessonsRes] = await Promise.all([
         client.from('topics').select('id, name, slug').ilike('name', q).limit(4),
-        client.from('lessons').select('id, title, topics(name, slug)').ilike('title', q).limit(6)
+        client.from('lessons')
+          .select('id, title, collections(slug, topics(name, slug))')
+          .ilike('title', q)
+          .limit(6)
       ])
 
       const results: SearchResult[] = []
@@ -48,19 +51,24 @@ watch(searchQuery, (newQuery) => {
         results.push(...topicsRes.data.map((t): TopicSearchResult => ({
           type: 'topic',
           id: t.id as string,
-          title: t.name as string,
+          name: t.name as string,
           slug: t.slug as string,
         })))
       }
 
       if (lessonsRes.data) {
-        results.push(...lessonsRes.data.map((l): LessonSearchResult => ({
-          type: 'lesson',
-          id: l.id as string,
-          title: l.title as string,
-          topicSlug: (l.topics as { slug: string } | null)?.slug ?? null,
-          topicName: (l.topics as { name: string } | null)?.name ?? null,
-        })))
+        results.push(...lessonsRes.data.map((l): LessonSearchResult => {
+          const col = l.collections as { slug: string; topics: { name: string; slug: string } | null } | null
+          return {
+            type: 'lesson',
+            id: l.id as string,
+            title: l.title as string,
+            topicSlug: col?.topics?.slug ?? null,
+            topicName: col?.topics?.name ?? null,
+            collectionSlug: col?.slug ?? null,
+            collectionName: null,
+          }
+        }))
       }
 
       searchResults.value = results
@@ -226,7 +234,7 @@ const navLinks: { label: string; href: string }[] = [
               <NuxtLink
                 v-for="res in searchResults"
                 :key="`${res.type}-${res.id}`"
-                :to="res.type === 'topic' ? `/topics/${res.slug}` : `/topics/${res.topicSlug}/lessons/${res.id}`"
+                :to="res.type === 'topic' ? `/topics/${res.slug}` : `/topics/${res.topicSlug}/${res.collectionSlug}/lessons/${res.id}`"
                 class="result-item"
                 @click="closeSearch"
               >
@@ -235,10 +243,10 @@ const navLinks: { label: string; href: string }[] = [
                   <svg v-else width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
                 </span>
                 <div class="result-info">
-                  <span class="result-title">{{ res.title }}</span>
+                  <span class="result-title">{{ res.type === 'topic' ? res.name : res.title }}</span>
                   <span class="result-type">{{ res.type === 'topic' ? 'Topic' : 'Lesson' }}</span>
                 </div>
-                <div v-if="res.topicName" class="result-right">
+                <div v-if="res.type === 'lesson' && res.topicName" class="result-right">
                   <span class="result-badge">{{ res.topicName }}</span>
                 </div>
               </NuxtLink>

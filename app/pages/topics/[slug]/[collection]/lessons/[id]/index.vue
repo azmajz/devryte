@@ -1,29 +1,53 @@
 <script setup lang="ts">
-import type { Topic, Lesson, AdjacentLessons, AdjacentLesson } from '~/types'
+import type { Topic, Collection, Lesson, AdjacentLessons, AdjacentLesson } from '~/types'
 
 const route = useRoute()
 const slug = computed(() => route.params.slug as string)
+const collectionSlug = computed(() => route.params.collection as string)
 const id = computed(() => route.params.id as string)
 
 const user = useSupabaseUser()
-
 const client = useSupabaseClient()
+
+// Fetch topic
 const { data: topic, pending: topicPending } = await useAsyncData<Topic | null>(`topic-${slug.value}`, async () => {
   const { data } = await client.from('topics').select('*').eq('slug', slug.value).single()
   return data as Topic | null
 })
 
-const { data: lesson, pending: lessonPending } = await useAsyncData<Lesson | null>(`lesson-${id.value}`, async () => {
-  const { data } = await client.from('lessons').select('*').eq('id', id.value).single()
-  return data as Lesson | null
-})
+// Fetch collection
+const { data: collection, pending: collectionPending } = await useAsyncData<Collection | null>(
+  `collection-${slug.value}-${collectionSlug.value}`,
+  async () => {
+    if (!topic.value) return null
+    const { data } = await client
+      .from('collections')
+      .select('*')
+      .eq('topic_id', topic.value.id)
+      .eq('slug', collectionSlug.value)
+      .single()
+    return data as Collection | null
+  },
+  { watch: [topic] }
+)
 
+// Fetch lesson
+const { data: lesson, pending: lessonPending } = await useAsyncData<Lesson | null>(
+  `lesson-${id.value}`,
+  async () => {
+    const { data } = await client.from('lessons').select('*').eq('id', id.value).single()
+    return data as Lesson | null
+  }
+)
+
+// Fetch adjacent lessons within the same collection
 const { data: adjacent } = await useAsyncData<AdjacentLessons | null>(`adjacent-${id.value}`, async () => {
-  if (!topic.value) return null
-  const { data: allLessons } = await client.from('lessons')
+  if (!collection.value) return null
+  const { data: allLessons } = await client
+    .from('lessons')
     .select('id, title, created_at')
-    .eq('topic_id', topic.value.id)
-    .order('created_at', { ascending: true })
+    .eq('collection_id', collection.value.id)
+    .order('order_index', { ascending: true })
 
   if (!allLessons) return null
 
@@ -32,14 +56,18 @@ const { data: adjacent } = await useAsyncData<AdjacentLessons | null>(`adjacent-
 
   return {
     prev: currentIndex > 0 ? allLessons[currentIndex - 1] as AdjacentLesson : null,
-    next: currentIndex < allLessons.length - 1 ? allLessons[currentIndex + 1] as AdjacentLesson : null
+    next: currentIndex < allLessons.length - 1 ? allLessons[currentIndex + 1] as AdjacentLesson : null,
   }
-}, {
-  watch: [topic]
-})
+}, { watch: [collection] })
 
 watchEffect(() => {
-  if (slug.value && id.value && !topicPending.value && !lessonPending.value && (!topic.value || !lesson.value)) {
+  if (slug.value && !topicPending.value && !topic.value) {
+    throw createError({ statusCode: 404, statusMessage: 'Topic not found' })
+  }
+  if (collectionSlug.value && !collectionPending.value && !collection.value && topic.value) {
+    throw createError({ statusCode: 404, statusMessage: 'Collection not found' })
+  }
+  if (id.value && !lessonPending.value && !lesson.value) {
     throw createError({ statusCode: 404, statusMessage: 'Lesson not found' })
   }
 })
@@ -68,13 +96,21 @@ function toggleToc() {
   tocVisible.value = !tocVisible.value
   localStorage.setItem('devryte:toc-visible', String(tocVisible.value))
 }
+
+const lessonBasePath = computed(() =>
+  `/topics/${slug.value}/${collectionSlug.value}/lessons/${id.value}`
+)
+const collectionPath = computed(() =>
+  `/topics/${slug.value}/${collectionSlug.value}`
+)
+const topicPath = computed(() => `/topics/${slug.value}`)
 </script>
 
 <template>
   <div class="lesson-page">
     <AppHeader />
 
-    <main class="page-content" v-if="topic && lesson">
+    <main class="page-content" v-if="topic && collection && lesson">
       <div class="lesson-container" :class="{ 'toc-hidden': !tocVisible }">
         <!-- Breadcrumb -->
         <nav class="breadcrumb fade-in" aria-label="Breadcrumb">
@@ -84,7 +120,13 @@ function toggleToc() {
               <polyline points="9 18 15 12 9 6"/>
             </svg>
           </span>
-          <NuxtLink :to="`/topics/${topic.slug}`" class="bc-item">{{ topic.name }}</NuxtLink>
+          <NuxtLink :to="topicPath" class="bc-item">{{ topic.name }}</NuxtLink>
+          <span class="bc-sep">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <polyline points="9 18 15 12 9 6"/>
+            </svg>
+          </span>
+          <NuxtLink :to="collectionPath" class="bc-item">{{ collection.name }}</NuxtLink>
           <span class="bc-sep">
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
               <polyline points="9 18 15 12 9 6"/>
@@ -96,15 +138,15 @@ function toggleToc() {
         <!-- Lesson Layout -->
         <div class="lesson-layout" :class="{ 'toc-hidden': !tocVisible }">
 
-          <!-- ── Main Content ───────────────────────────────── -->
+          <!-- ── Main Content ─────────────────────────────────────── -->
           <article class="lesson-content fade-in">
 
             <!-- Meta bar -->
             <div class="lesson-meta-bar">
               <div class="lesson-meta-left">
-                <NuxtLink :to="`/topics/${topic.slug}`" class="meta-tag" :style="{ color: topic.color, background: topic.color + '1A' }">
+                <NuxtLink :to="topicPath" class="meta-tag" :style="{ color: topic.color, background: topic.color + '1A' }">
                   <template v-if="topic.icon && topic.icon.trim().startsWith('<svg')">
-                    <span class="svg-icon-wrapper" style="display: flex; align-items: center;" v-html="topic.icon"></span>
+                    <span class="svg-icon-wrapper" v-html="topic.icon"></span>
                   </template>
                   <template v-else>
                     <span style="font-size: 1.2em;">{{ topic.icon }}</span>
@@ -139,7 +181,7 @@ function toggleToc() {
                 </button>
 
                 <!-- Edit -->
-                <NuxtLink v-if="user" :to="`/topics/${topic.slug}/lessons/${lesson.id}/edit`" class="btn btn-ghost btn-sm" id="edit-lesson-btn">
+                <NuxtLink v-if="user" :to="`${lessonBasePath}/edit`" class="btn btn-ghost btn-sm" id="edit-lesson-btn">
                   <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                     <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
                     <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
@@ -149,7 +191,7 @@ function toggleToc() {
               </div>
             </div>
 
-            <!-- Markdown content — centered with max-width -->
+            <!-- Markdown content -->
             <div class="prose-wrap">
               <MarkdownRenderer :content="lesson.content" />
             </div>
@@ -158,7 +200,7 @@ function toggleToc() {
             <nav v-if="adjacent" class="lesson-nav">
               <NuxtLink
                 v-if="adjacent.prev"
-                :to="`/topics/${topic.slug}/lessons/${adjacent.prev.id}`"
+                :to="`${collectionPath}/lessons/${adjacent.prev.id}`"
                 class="lesson-nav-btn prev"
                 id="prev-lesson-btn"
               >
@@ -174,7 +216,7 @@ function toggleToc() {
 
               <NuxtLink
                 v-if="adjacent.next"
-                :to="`/topics/${topic.slug}/lessons/${adjacent.next.id}`"
+                :to="`${collectionPath}/lessons/${adjacent.next.id}`"
                 class="lesson-nav-btn next"
                 id="next-lesson-btn"
               >
@@ -186,6 +228,7 @@ function toggleToc() {
                   <path d="M5 12h14M12 5l7 7-7 7"/>
                 </svg>
               </NuxtLink>
+              <div v-else class="lesson-nav-spacer"></div>
             </nav>
           </article>
 
@@ -196,12 +239,22 @@ function toggleToc() {
         </div>
       </div>
     </main>
+
   </div>
 </template>
 
 <style scoped>
 .lesson-page {
   min-height: 100vh;
+}
+
+.svg-icon-wrapper {
+  display: flex; 
+  align-items: center;
+}
+:deep(.svg-icon-wrapper svg) {
+  width: 34px !important;
+  height: 34px !important;
 }
 
 /* Outer shell — centred, max-width */
@@ -222,11 +275,7 @@ function toggleToc() {
   margin-bottom: var(--space-6);
   padding-top: var(--space-4);
   flex-wrap: wrap;
-  /* margin-left: 95px; */
 }
-/* .toc-hidden.breadcrumb {
-  margin-left: 235px;
-} */
 .bc-item {
   font-size: 0.875rem;
   color: var(--text-tertiary);
@@ -254,14 +303,12 @@ function toggleToc() {
 /* ── Layout ──────────────────────────────────────────────── */
 .lesson-layout {
   display: grid;
-  /* content col (fluid, max ~760px) + TOC col (240px) */
   grid-template-columns: 1fr 240px;
   gap: var(--space-12);
   align-items: flex-start;
   padding-bottom: var(--space-20);
 }
 
-/* When TOC is hidden, content spans full width and is centred */
 .lesson-layout.toc-hidden {
   grid-template-columns: 1fr;
 }
@@ -271,7 +318,6 @@ function toggleToc() {
   min-width: 0;
 }
 
-/* Centre prose within the content column */
 .prose-wrap {
   max-width: 768px;
   margin: 0 auto;
@@ -297,9 +343,7 @@ function toggleToc() {
   gap: var(--space-5);
   flex-wrap: wrap;
 }
-.topic-name {
-  color: var(--text-primary);
-}
+.topic-name { color: var(--text-primary); }
 .meta-actions {
   display: flex;
   align-items: center;
@@ -318,9 +362,7 @@ function toggleToc() {
   transition: opacity var(--duration-fast);
 }
 
-.meta-tag:hover {
-  opacity: 0.85;
-}
+.meta-tag:hover { opacity: 0.85; }
 
 .meta-time,
 .meta-date {
@@ -445,7 +487,6 @@ function toggleToc() {
   .lesson-layout {
     grid-template-columns: 1fr;
   }
-  /* On narrow screens the TOC toggle hides the sidebar only */
 }
 
 @media (max-width: 768px) {

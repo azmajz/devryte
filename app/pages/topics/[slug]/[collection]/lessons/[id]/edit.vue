@@ -1,17 +1,37 @@
 <script setup lang="ts">
-import type { Topic, Lesson } from '~/types'
+import type { Topic, Collection, Lesson } from '~/types'
 
 const route = useRoute()
 const slug = computed(() => route.params.slug as string)
+const collectionSlug = computed(() => route.params.collection as string)
 const id = computed(() => route.params.id as string)
 const isNew = computed(() => id.value === 'new')
 
 const client = useSupabaseClient()
+
+// Fetch topic
 const { data: topic, pending: topicPending } = await useAsyncData<Topic | null>(`topic-${slug.value}`, async () => {
   const { data } = await client.from('topics').select('*').eq('slug', slug.value).single()
   return data as Topic | null
 })
 
+// Fetch collection
+const { data: collection, pending: collectionPending } = await useAsyncData<Collection | null>(
+  `collection-edit-${slug.value}-${collectionSlug.value}`,
+  async () => {
+    if (!topic.value) return null
+    const { data } = await client
+      .from('collections')
+      .select('*')
+      .eq('topic_id', topic.value.id)
+      .eq('slug', collectionSlug.value)
+      .single()
+    return data as Collection | null
+  },
+  { watch: [topic] }
+)
+
+// Fetch existing lesson (if editing)
 const { data: existingLesson, pending: lessonPending } = await useAsyncData<Lesson | null>(`edit-lesson-${id.value}`, async () => {
   if (isNew.value) return null
   const { data } = await client.from('lessons').select('*').eq('id', id.value).single()
@@ -21,6 +41,9 @@ const { data: existingLesson, pending: lessonPending } = await useAsyncData<Less
 watchEffect(() => {
   if (slug.value && !topicPending.value && !topic.value) {
     throw createError({ statusCode: 404, statusMessage: 'Topic not found' })
+  }
+  if (collectionSlug.value && !collectionPending.value && !collection.value && topic.value) {
+    throw createError({ statusCode: 404, statusMessage: 'Collection not found' })
   }
 })
 
@@ -33,7 +56,7 @@ watchEffect(() => {
   if (!initialized.value && !topicPending.value && !lessonPending.value) {
     if (isNew.value) {
       lessonTitle.value = ''
-      lessonContent.value = `# Lesson Title\n\nStart writing your lesson here...\n\n## Introduction\n\nDescribe the topic...\n\n## Code Example\n\n\`\`\`csharp\n// Your code here\nConsole.WriteLine("Hello, World!");\n\`\`\`\n\n## Summary\n\nWrap up the key points.\n`
+      lessonContent.value = `# Lesson Title\n\nStart writing your lesson here...\n\n## Introduction\n\nDescribe the topic...\n\n## Code Example\n\n\`\`\`javascript\n// Your code here\nconsole.log("Hello, World!");\n\`\`\`\n\n## Summary\n\nWrap up the key points.\n`
       initialized.value = true
     } else if (existingLesson.value) {
       lessonTitle.value = existingLesson.value.title
@@ -50,7 +73,7 @@ function generateSlug(title: string): string {
 }
 
 async function saveLesson(): Promise<void> {
-  if (!lessonTitle.value || !lessonContent.value || !topic.value) {
+  if (!lessonTitle.value || !lessonContent.value || !collection.value) {
     alert('Title and content are required')
     return
   }
@@ -59,31 +82,42 @@ async function saveLesson(): Promise<void> {
   try {
     const calculatedSlug = generateSlug(lessonTitle.value)
     const readTime = Math.max(1, Math.ceil(lessonContent.value.length / 800))
+    const collectionPath = `/topics/${topic.value!.slug}/${collection.value.slug}`
 
     if (isNew.value) {
+      // Get max order_index in this collection
+      const { data: maxOrderData } = await client
+        .from('lessons')
+        .select('order_index')
+        .eq('collection_id', collection.value.id)
+        .order('order_index', { ascending: false })
+        .limit(1)
+      const nextOrder = maxOrderData?.[0]?.order_index != null ? maxOrderData[0].order_index + 1 : 0
+
       const { data, error } = await client.from('lessons').insert({
         title: lessonTitle.value,
         content: lessonContent.value,
         slug: calculatedSlug,
-        topic_id: topic.value.id,
-        read_time: readTime
+        collection_id: collection.value.id,
+        order_index: nextOrder,
+        read_time: readTime,
       }).select().single()
 
       if (error) throw error
-      navigateTo(`/topics/${topic.value.slug}/lessons/${data.id}`)
+      navigateTo(`${collectionPath}/lessons/${data.id}`)
     } else {
       const { error } = await client.from('lessons').update({
         title: lessonTitle.value,
         content: lessonContent.value,
         slug: calculatedSlug,
         read_time: readTime,
-        updated_at: new Date().toISOString()
+        updated_at: new Date().toISOString(),
       }).eq('id', id.value)
 
       if (error) throw error
-      navigateTo(`/topics/${topic.value.slug}/lessons/${id.value}`)
+      navigateTo(`${collectionPath}/lessons/${id.value}`)
     }
-  } catch(err) {
+  } catch (err) {
     console.error(err)
     alert('Failed to save lesson')
   } finally {
@@ -99,7 +133,7 @@ useHead(computed(() => ({
   title: `${isNew.value ? 'New Lesson' : `Edit: ${existingLesson.value?.title ?? ''}`} — Devryte`,
 })))
 
-// Render preview using correct marked v18 API
+// Render preview using marked
 async function renderPreview(): Promise<void> {
   const { marked } = await import('marked')
   const hljs = (await import('highlight.js')).default
@@ -167,7 +201,7 @@ function onPreviewScroll(): void {
 
 <template>
   <!-- Full-height editor layout — NO page-content wrapper to avoid double padding -->
-  <div v-if="topic" class="edit-root">
+  <div v-if="topic && collection" class="edit-root">
     <AppHeader />
 
     <div class="edit-shell">
@@ -179,6 +213,8 @@ function onPreviewScroll(): void {
             <NuxtLink to="/" class="bc-item">Topics</NuxtLink>
             <span class="bc-sep">›</span>
             <NuxtLink :to="`/topics/${topic.slug}`" class="bc-item">{{ topic.name }}</NuxtLink>
+            <span class="bc-sep">›</span>
+            <NuxtLink :to="`/topics/${topic.slug}/${collection.slug}`" class="bc-item">{{ collection.name }}</NuxtLink>
             <span class="bc-sep">›</span>
             <span class="bc-item active">{{ isNew ? 'New Lesson' : 'Edit Lesson' }}</span>
           </nav>
@@ -229,7 +265,11 @@ function onPreviewScroll(): void {
           </div>
 
           <!-- Actions -->
-          <NuxtLink :to="isNew ? `/topics/${topic.slug}` : `/topics/${topic.slug}/lessons/${id}`" class="btn btn-ghost btn-sm" id="cancel-btn">
+          <NuxtLink
+            :to="isNew ? `/topics/${topic.slug}/${collection.slug}` : `/topics/${topic.slug}/${collection.slug}/lessons/${id}`"
+            class="btn btn-ghost btn-sm"
+            id="cancel-btn"
+          >
             Cancel
           </NuxtLink>
           <button class="btn btn-primary btn-sm" id="save-btn" @click="saveLesson" :disabled="isSaving">
@@ -322,7 +362,7 @@ function onPreviewScroll(): void {
 .edit-shell {
   display: flex;
   flex-direction: column;
-  padding-top: 64px; /* offset for fixed AppHeader */
+  padding-top: 64px;
   height: 100vh;
   overflow: hidden;
 }

@@ -1,5 +1,6 @@
 // ============================================================
 // Devryte — Shared Types (mirrors Supabase DB schema)
+// 3-Level: Topic → Collection → Lesson
 // ============================================================
 
 // ─── Core DB Entities ────────────────────────────────────────
@@ -12,15 +13,30 @@ export interface Topic {
   icon: string | null
   color: string | null
   created_at: string | null
-  /** Computed/joined from `lessons(id)` in index.vue query */
+  /** Computed/joined: total lesson count across all collections */
+  lesson_count?: number
+  /** Computed/joined: number of collections */
+  collection_count?: number
+}
+
+export interface Collection {
+  id: string
+  topic_id: string
+  slug: string
+  name: string
+  description: string | null
+  order_index: number
+  created_at: string | null
+  /** Computed/joined from `lessons(id)` */
   lesson_count?: number
 }
 
 export interface Lesson {
   id: string
-  topic_id: string
+  collection_id: string
   title: string
   slug: string
+  order_index: number
   read_time: number
   content: string | null
   updated_at: string | null
@@ -56,6 +72,8 @@ export interface LessonSearchResult {
   title: string
   topicSlug: string | null
   topicName: string | null
+  collectionSlug: string | null
+  collectionName: string | null
 }
 
 export type SearchResult = TopicSearchResult | LessonSearchResult
