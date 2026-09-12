@@ -67,14 +67,15 @@ const editPath = computed(() =>
   align-items: center;
   gap: var(--space-3);
   padding: var(--space-4) var(--space-5);
-  border-radius: var(--radius-md);
-  border: 1px solid transparent;
-  transition: all var(--duration-fast);
+  background: var(--bg-surface);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-lg);
+  transition: border-color var(--duration-fast), box-shadow var(--duration-fast);
 }
 
 .lesson-row:hover {
-  background: var(--bg-surface-hover);
-  border-color: var(--border-subtle);
+  border-color: var(--border-color);
+  box-shadow: var(--shadow-sm);
 }
 
 .lesson-link {

@@ -200,14 +200,9 @@ async function executeDeleteLesson() {
   color: var(--text-primary);
 }
 .lessons-list {
-  background: var(--bg-surface);
-  border: 1px solid var(--border-subtle);
-  border-radius: var(--radius-lg);
-  overflow: hidden;
-  padding: var(--space-2);
   display: flex;
   flex-direction: column;
-  gap: 2px;
+  gap: var(--space-3);
 }
 
 .loading-state {
@@ -224,9 +219,6 @@ async function executeDeleteLesson() {
 @media (max-width: 768px) {
   .breadcrumb {
     margin-bottom: var(--space-4);
-  }
-  .lessons-list {
-    padding: var(--space-1);
   }
 }
 </style>
