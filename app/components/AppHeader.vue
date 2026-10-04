@@ -3,11 +3,12 @@ import type { SearchResult, TopicSearchResult, LessonSearchResult } from '~/type
 
 const colorMode = useColorMode()
 
-type ColorMode = 'light' | 'dark' | 'black'
-const modes: ColorMode[] = ['light', 'dark', 'black']
+type ColorMode = 'light' | 'dark' | 'black' | 'chatgpt'
+const modes: ColorMode[] = ['light', 'dark', 'black', 'chatgpt']
 
 const isDark = computed(() => colorMode.value === 'dark')
 const isBlack = computed(() => colorMode.value === 'black')
+const isChatGPT = computed(() => colorMode.value === 'chatgpt')
 
 function cycleColorMode(): void {
   const current = colorMode.preference as ColorMode
@@ -175,7 +176,7 @@ const navLinks: { label: string; href: string }[] = [
           <ClientOnly>
             <Transition name="icon-flip" mode="out-in">
               <!-- Sun — light mode -->
-              <svg v-if="!isDark && !isBlack" key="light" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <svg v-if="!isDark && !isBlack && !isChatGPT" key="light" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                 <circle cx="12" cy="12" r="4"/>
                 <path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M6.34 17.66l-1.41 1.41M19.07 4.93l-1.41 1.41"/>
               </svg>
@@ -188,14 +189,19 @@ const navLinks: { label: string; href: string }[] = [
                 </g>       
               </svg>
               <!-- Moon — black mode -->
-              <svg v-else key="black" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <svg v-else-if="isBlack" key="black" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                 <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/>
+              </svg>
+              <!-- ChatGPT logo — chatgpt mode -->
+              <svg v-else key="chatgpt" width="18" height="18" viewBox="0 0 16 16" >
+                <path d="M0 0h16v16H0z" fill="none" />
+                <path fill="currentColor" d="M13.67 6.1c.31-.89.24-1.87-.23-2.68c-.86-1.49-2.72-2.02-4.24-1.28A3.22 3.22 0 0 0 6.76 1C5.04 1 3.64 2.35 3.53 4.04c-.92.18-1.73.73-2.21 1.55C.46 7.08.93 8.96 2.34 9.9c-.31.89-.24 1.87.23 2.68c.6 1.04 1.7 1.62 2.82 1.62c.48 0 .97-.12 1.43-.34a3.21 3.21 0 0 0 2.44 1.13c1.72 0 3.12-1.35 3.23-3.04c.92-.18 1.73-.73 2.21-1.55c.86-1.49.39-3.37-1.02-4.31zm-1.1-2.18c.29.51.36 1.1.23 1.66l-2.55-1.47a.5.5 0 0 0-.5 0L6.5 5.99V4.84l3-1.73c1.07-.62 2.45-.25 3.07.82zM9.5 8.87L8 9.74l-1.5-.87V7.14L8 6.27l1.5.87zm-5-4.62C4.5 3.01 5.51 2 6.75 2c.58 0 1.13.23 1.55.63L5.75 4.1c-.15.09-.25.25-.25.43v3.75l-1-.58V4.24zM2.18 6.08c.29-.51.77-.86 1.32-1.03v2.94c0 .18.1.34.25.43L7 10.3l-1 .58l-3-1.73c-1.07-.62-1.44-2-.82-3.07m1.25 6c-.29-.51-.36-1.1-.23-1.66l2.55 1.47c.08.04.16.07.25.07s.17-.02.25-.07l3.25-1.88v1.15l-3 1.73c-1.07.62-2.45.25-3.07-.82zm8.07-.33c0 1.24-1.01 2.25-2.25 2.25c-.58 0-1.13-.23-1.55-.63l2.55-1.47c.15-.09.25-.25.25-.43V7.72l1 .58v3.46zm2.32-1.83c-.29.51-.77.86-1.32 1.03V8.01c0-.18-.1-.34-.25-.43L9 5.7l1-.58l3 1.73c1.07.62 1.44 2 .82 3.07" />
               </svg>
             </Transition>
             
             <template #fallback>
               <!-- Fallback rendered on server to prevent layout shift -->
-              <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 32 32">
+              <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 32 32">
                 <path d="M0 0h32v32H0z" fill="none" />
                 <circle cx="16" cy="16" r="8" fill="currentColor" />
               </svg>
