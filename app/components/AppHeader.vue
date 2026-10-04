@@ -48,7 +48,7 @@ watch(searchQuery, (newQuery) => {
       const results: SearchResult[] = []
 
       if (topicsRes.data) {
-        results.push(...topicsRes.data.map((t): TopicSearchResult => ({
+        results.push(...topicsRes.data.map((t: TopicSearchResult): TopicSearchResult => ({
           type: 'topic',
           id: t.id as string,
           name: t.name as string,
@@ -57,7 +57,7 @@ watch(searchQuery, (newQuery) => {
       }
 
       if (lessonsRes.data) {
-        results.push(...lessonsRes.data.map((l): LessonSearchResult => {
+        results.push(...lessonsRes.data.map((l:any): LessonSearchResult => {
           const col = l.collections as { slug: string; topics: { name: string; slug: string } | null } | null
           return {
             type: 'lesson',

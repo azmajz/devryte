@@ -25,6 +25,9 @@ export default defineNuxtConfig({
         { rel: 'preconnect', href: 'https://fonts.googleapis.com' },
         { rel: 'preconnect', href: 'https://fonts.gstatic.com', crossorigin: '' },
         { rel: 'stylesheet', href: 'https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap' },
+        { rel: 'icon', href: '/favicon.ico', sizes: '48x48' },
+        { rel: 'icon', href: '/pwa-icon-source.svg', sizes: 'any', type: 'image/svg+xml' },
+        { rel: 'apple-touch-icon', href: '/apple-touch-icon-180x180.png' },
       ],
     },
   },
@@ -35,7 +38,7 @@ export default defineNuxtConfig({
     },
     registerType: 'autoUpdate',
     manifest: {
-      name: 'Devryte — Learning Workspace',
+      name: 'Devryte',
       short_name: 'Devryte',
       description: 'A learning workspace to organize topics, lessons and notes.',
       theme_color: '#13131c',
@@ -46,16 +49,27 @@ export default defineNuxtConfig({
       start_url: '/',
       icons: [
         {
-          src: '/pwa-icon-192.png',
+          src: '/pwa-64x64.png',
+          sizes: '64x64',
+          type: 'image/png',
+        },
+        {
+          src: '/pwa-192x192.png',
           sizes: '192x192',
           type: 'image/png',
           purpose: 'any',
         },
         {
-          src: '/pwa-icon-512.png',
+          src: '/pwa-512x512.png',
           sizes: '512x512',
           type: 'image/png',
-          purpose: 'any maskable',
+          purpose: 'any',
+        },
+        {
+          src: '/maskable-icon-512x512.png',
+          sizes: '512x512',
+          type: 'image/png',
+          purpose: 'maskable',
         },
       ],
     },
@@ -63,6 +77,14 @@ export default defineNuxtConfig({
       // Network-first: always try the network, fall back to cache when offline
       navigateFallback: '/',
       globPatterns: ['**/*.{js,css,html,png,svg,ico,woff,woff2}'],
+      // Explicitly include all PWA icon variants
+      additionalManifestEntries: [
+        { url: '/pwa-64x64.png', revision: null },
+        { url: '/pwa-192x192.png', revision: null },
+        { url: '/pwa-512x512.png', revision: null },
+        { url: '/maskable-icon-512x512.png', revision: null },
+        { url: '/apple-touch-icon-180x180.png', revision: null },
+      ],
       runtimeCaching: [
         {
           // App shell & pages — network-first
