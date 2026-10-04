@@ -102,6 +102,30 @@ function handleKeydown(e: KeyboardEvent): void {
 onMounted(() => window.addEventListener('keydown', handleKeydown))
 onUnmounted(() => window.removeEventListener('keydown', handleKeydown))
 
+// ── Scroll-aware header (hide on scroll-down, reveal on scroll-up) ──
+const headerHidden = ref(false)
+let lastScrollY = 0
+let rafPending = false
+
+function onScroll(): void {
+  if (rafPending) return
+  rafPending = true
+  requestAnimationFrame(() => {
+    const currentY = window.scrollY
+    // Only react after scrolling past 80 px so the header never hides at the very top
+    if (currentY > 80) {
+      headerHidden.value = currentY > lastScrollY
+    } else {
+      headerHidden.value = false
+    }
+    lastScrollY = currentY
+    rafPending = false
+  })
+}
+
+onMounted(() => window.addEventListener('scroll', onScroll, { passive: true }))
+onUnmounted(() => window.removeEventListener('scroll', onScroll))
+
 const route = useRoute()
 
 const user = useSupabaseUser()
@@ -120,7 +144,7 @@ const navLinks: { label: string; href: string }[] = [
 </script>
 
 <template>
-  <header class="app-header">
+  <header class="app-header" :class="{ 'header--hidden': headerHidden }">
     <div class="header-inner container-wide">
       <!-- Logo -->
       <NuxtLink to="/" class="logo">
@@ -271,6 +295,13 @@ const navLinks: { label: string; href: string }[] = [
   backdrop-filter: blur(16px) saturate(180%);
   -webkit-backdrop-filter: blur(16px) saturate(180%);
   border-bottom: 1px solid var(--border-subtle);
+  transform: translateY(0);
+  transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  will-change: transform;
+}
+
+.header--hidden {
+  transform: translateY(-100%);
 }
 
 .header-inner {
