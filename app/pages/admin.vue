@@ -253,8 +253,8 @@ async function handleAuth() {
 .input-wrapper input {
   width: 100%;
   padding: var(--space-3) calc(var(--space-3) * 2 + 18px) var(--space-3) calc(var(--space-3) * 2 + 18px);
-  background: var(--bg-base);
-  border: 1px solid var(--border-subtle);
+  background: var(--bg-surface-2);
+  border: 1px solid var(--border-color);
   border-radius: var(--radius-md);
   color: var(--text-primary);
   font-family: var(--font-sans);
@@ -262,10 +262,15 @@ async function handleAuth() {
   transition: all var(--duration-fast);
 }
 
+.input-wrapper input:hover:not(:disabled) {
+  border-color: var(--accent-secondary);
+  background: var(--bg-surface-hover);
+}
+
 .input-wrapper input:focus {
   outline: none;
   border-color: var(--accent-primary);
-  background: var(--bg-surface);
+  background: var(--bg-surface-2);
   box-shadow: 0 0 0 3px var(--accent-glow-soft);
 }
 
@@ -274,8 +279,9 @@ async function handleAuth() {
 }
 
 .input-wrapper input:disabled {
-  opacity: 0.7;
+  opacity: 0.5;
   cursor: not-allowed;
+  background: var(--bg-surface);
 }
 
 .password-toggle {
