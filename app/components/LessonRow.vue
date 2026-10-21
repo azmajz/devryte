@@ -107,7 +107,7 @@ const editPath = computed(() =>
   font-size: 0.9375rem;
   font-weight: 500;
   color: var(--text-primary);
-  white-space: nowrap;
+  /* white-space: nowrap; */
   overflow: hidden;
   text-overflow: ellipsis;
   transition: color var(--duration-fast);
