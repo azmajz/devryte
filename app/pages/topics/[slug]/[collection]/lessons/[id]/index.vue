@@ -237,7 +237,7 @@ const topicPath = computed(() => `/topics/${slug.value}`)
 
             <!-- Markdown content -->
             <div class="prose-wrap">
-              <MarkdownRenderer :content="lesson.content" />
+              <MarkdownRenderer :content="lesson.content" :language="topic.language" />
             </div>
 
             <!-- Prev / Next Navigation -->

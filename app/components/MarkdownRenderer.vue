@@ -1,39 +1,41 @@
 <script setup lang="ts">
-import { marked } from 'marked'
+import { Marked } from 'marked'
 import hljs from 'highlight.js'
-
-// Configure marked once at module level (not inside computed to avoid accumulation)
-let isConfigured = false
-function configureMarked() {
-  if (isConfigured) return
-  isConfigured = true
-  marked.use({
-    gfm: true,
-    breaks: true,
-    renderer: {
-      code({ text, lang }: { text: string; lang?: string }) {
-        const language = lang && hljs.getLanguage(lang) ? lang : 'plaintext'
-        const highlighted = hljs.highlight(text, { language }).value
-        return `<pre><code class="hljs language-${language}">${highlighted}</code></pre>`
-      },
-      heading({ text, depth }: { text: string; depth: number }) {
-        const id = text
-          .toLowerCase()
-          .replace(/[^\w\s-]/g, '')
-          .replace(/\s+/g, '-')
-        return `<h${depth} id="${id}">${text}</h${depth}>\n`
-      },
-    },
-  })
-}
 
 const props = defineProps<{
   content: string
+  /** Optional default language for code blocks with no explicit lang tag */
+  language?: string | null
 }>()
 
+// Mutable variable the renderer closure reads — set before every parse call.
+// This avoids recreating the Marked instance on every computed re-evaluation.
+let fallbackLang = 'plaintext'
+
+const instance = new Marked({
+  gfm: true,
+  breaks: true,
+  renderer: {
+    code({ text, lang }: { text: string; lang?: string }) {
+      const language = lang && hljs.getLanguage(lang) ? lang : fallbackLang
+      const highlighted = hljs.highlight(text, { language }).value
+      return `<pre><code class="hljs language-${language}">${highlighted}</code></pre>`
+    },
+    heading({ text, depth }: { text: string; depth: number }) {
+      const id = text
+        .toLowerCase()
+        .replace(/[^\w\s-]/g, '')
+        .replace(/\s+/g, '-')
+      return `<h${depth} id="${id}">${text}</h${depth}>\n`
+    },
+  },
+})
+
 const renderedHtml = computed(() => {
-  configureMarked()
-  return marked(props.content) as string
+  fallbackLang = props.language && hljs.getLanguage(props.language)
+    ? props.language
+    : 'plaintext'
+  return instance.parse(props.content) as string
 })
 </script>
 

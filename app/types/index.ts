@@ -12,6 +12,7 @@ export interface Topic {
   description: string | null
   icon: string | null
   color: string | null
+  language: string | null
   created_at: string | null
   /** Computed/joined: total lesson count across all collections */
   lesson_count?: number

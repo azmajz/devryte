@@ -31,6 +31,7 @@ const form = reactive({
   description: '',
   icon: '📚',
   color: '#818cf8',
+  language: '',
 })
 
 const isSubmitting = ref(false)
@@ -42,6 +43,7 @@ function openAddModal() {
   form.description = ''
   form.icon = '📚'
   form.color = '#818cf8'
+  form.language = ''
   showModal.value = true
 }
 
@@ -52,6 +54,7 @@ function openEditModal(topic: Topic): void {
   form.description = topic.description || ''
   form.icon = topic.icon || '📚'
   form.color = topic.color || '#818cf8'
+  form.language = topic.language || ''
   showModal.value = true
 }
 
@@ -70,6 +73,7 @@ async function saveTopic(): Promise<void> {
         description: form.description,
         icon: form.icon,
         color: form.color,
+        language: form.language || null,
       }).eq('id', editingId.value)
     } else {
       await client.from('topics').insert({
@@ -78,6 +82,7 @@ async function saveTopic(): Promise<void> {
         description: form.description,
         icon: form.icon,
         color: form.color,
+        language: form.language || null,
       })
     }
     
@@ -213,10 +218,14 @@ async function executeDeleteTopic(): Promise<void> {
                 <label class="form-label">Description</label>
                 <textarea class="form-input form-textarea" v-model="form.description" placeholder="What will you learn in this topic?"></textarea>
               </div>
+              <div class="form-group">
+                <label class="form-label">Icon (Emoji or SVG)</label>
+                <textarea class="form-input form-textarea icon-textarea" v-model="form.icon" placeholder="🚀 or paste full <svg>..." />
+              </div>
               <div class="form-group-row">
                 <div class="form-group">
-                  <label class="form-label">Icon (Emoji or SVG)</label>
-                  <input type="text" class="form-input" v-model="form.icon" placeholder="🚀 or <svg>..." />
+                  <label class="form-label">Default Language</label>
+                  <input type="text" class="form-input" v-model="form.language" placeholder="e.g. javascript, python, rust…" />
                 </div>
                 <div class="form-group">
                   <label class="form-label">Color</label>
@@ -485,6 +494,12 @@ async function executeDeleteTopic(): Promise<void> {
 .form-textarea {
   resize: vertical;
   min-height: 80px;
+}
+
+.icon-textarea {
+  min-height: 100px;
+  font-family: var(--font-mono);
+  font-size: 0.85rem;
 }
 
 /* ─── Mobile Adjustments ─── */
